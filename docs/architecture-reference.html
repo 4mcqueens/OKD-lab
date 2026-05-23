@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>OKD Lab — AWS Architecture Reference</title>
+  <style>
+    :root {
+      --bg:        #0f1117;
+      --surface:   #1a1d27;
+      --border:    #2e3147;
+      --accent:    #ee0000;   /* OKD / OpenShift red */
+      --accent2:   #4a9eff;
+      --text:      #e2e8f0;
+      --muted:     #8892a4;
+      --code-bg:   #0d1117;
+      --green:     #3fb950;
+      --yellow:    #d29922;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    /* ── Header ── */
+    header {
+      background: linear-gradient(135deg, #1a0000 0%, #2a0a0a 40%, #1a1d27 100%);
+      border-bottom: 2px solid var(--accent);
+      padding: 2.5rem 2rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1.5rem;
+    }
+    .logo {
+      width: 56px; height: 56px;
+      background: var(--accent);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.6rem; font-weight: 900; color: #fff;
+      flex-shrink: 0;
+    }
+    header h1 { font-size: 1.9rem; font-weight: 700; }
+    header h1 span { color: var(--accent); }
+    header p { color: var(--muted); font-size: 0.9rem; margin-top: 0.2rem; }
+
+    /* ── Layout ── */
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+    /* ── Nav / TOC ── */
+    nav {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.2rem 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+    nav h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 0.8rem; }
+    nav ol { padding-left: 1.2rem; column-count: 2; column-gap: 2rem; }
+    nav li { margin-bottom: 0.3rem; }
+    nav a { color: var(--accent2); text-decoration: none; font-size: 0.9rem; }
+    nav a:hover { text-decoration: underline; }
+
+    /* ── Sections ── */
+    section { margin-bottom: 3rem; }
+    section h2 {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #fff;
+      border-left: 4px solid var(--accent);
+      padding-left: 0.75rem;
+      margin-bottom: 1.2rem;
+      scroll-margin-top: 80px;
+    }
+    section h3 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: var(--accent2);
+      margin: 1.4rem 0 0.6rem;
+    }
+    p { color: var(--text); margin-bottom: 0.8rem; }
+
+    /* ── Code / Pre ── */
+    pre, code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.83rem;
+    }
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.1rem 1.3rem;
+      overflow-x: auto;
+      line-height: 1.55;
+      margin: 0.5rem 0 1rem;
+      white-space: pre;
+    }
+    code { background: #1e2330; border-radius: 4px; padding: 0.1em 0.4em; font-size: 0.85em; }
+
+    /* ── Tables ── */
+    .table-wrap { overflow-x: auto; margin-bottom: 1.2rem; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+    thead tr { background: #222536; }
+    th {
+      text-align: left;
+      padding: 0.65rem 1rem;
+      color: var(--muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      border-bottom: 2px solid var(--border);
+    }
+    td {
+      padding: 0.6rem 1rem;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    tr:hover td { background: rgba(255,255,255,0.03); }
+    .yes  { color: var(--green);  font-weight: 600; }
+    .no   { color: var(--muted); }
+    .warn { color: var(--yellow); font-weight: 600; }
+
+    /* ── Cards ── */
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.2rem;
+    }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1.1rem 1.3rem;
+    }
+    .card h4 { font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+    .card p  { font-size: 0.92rem; color: var(--text); margin: 0; }
+    .card .value { font-size: 1.1rem; font-weight: 700; color: #fff; }
+
+    /* ── Callout ── */
+    .callout {
+      border-radius: 8px;
+      padding: 0.9rem 1.2rem;
+      margin: 1rem 0;
+      display: flex;
+      gap: 0.75rem;
+      font-size: 0.9rem;
+    }
+    .callout.tip    { background: #0d2d1a; border-left: 4px solid var(--green); }
+    .callout.warn   { background: #2a1f00; border-left: 4px solid var(--yellow); }
+    .callout.info   { background: #0d1a2d; border-left: 4px solid var(--accent2); }
+    .callout .icon  { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout div    { color: var(--text); }
+    .callout strong { color: #fff; }
+
+    /* ── Badge ── */
+    .badge {
+      display: inline-block;
+      padding: 0.15em 0.6em;
+      border-radius: 4px;
+      font-size: 0.78rem;
+      font-weight: 600;
+      margin-right: 0.3rem;
+    }
+    .badge.red    { background: #4d0a0a; color: #ff8080; }
+    .badge.blue   { background: #0a1a4d; color: #80b0ff; }
+    .badge.green  { background: #0a3d1a; color: #80ff80; }
+    .badge.grey   { background: #2a2d3a; color: #aab0c0; }
+
+    /* ── Diagram ── */
+    .diagram {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.2rem 1.5rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+    }
+    .diagram pre {
+      background: transparent;
+      border: none;
+      padding: 0;
+      margin: 0;
+      color: #a0d0ff;
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+
+    /* ── Flow steps ── */
+    .steps { list-style: none; padding: 0; }
+    .steps li {
+      display: flex;
+      gap: 1rem;
+      margin-bottom: 0.9rem;
+      align-items: flex-start;
+    }
+    .step-num {
+      background: var(--accent);
+      color: #fff;
+      font-weight: 700;
+      font-size: 0.8rem;
+      border-radius: 50%;
+      width: 26px; height: 26px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      margin-top: 0.15rem;
+    }
+    .steps li div { color: var(--text); }
+    .steps li strong { color: #fff; }
+
+    /* ── Footer ── */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 1.5rem 2rem;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+    footer a { color: var(--accent2); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo">O</div>
+  <div>
+    <h1><span>OKD</span> Lab — AWS Architecture Reference</h1>
+    <p>3-node compact cluster &nbsp;·&nbsp; AWS EC2 &nbsp;·&nbsp; GitOps with ArgoCD &nbsp;·&nbsp; Generated 2026-05-23</p>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- TOC -->
+  <nav>
+    <h2>Table of Contents</h2>
+    <ol>
+      <li><a href="#overview">Architecture Overview</a></li>
+      <li><a href="#vpc">VPC &amp; Networking</a></li>
+      <li><a href="#ec2">EC2 Instances</a></li>
+      <li><a href="#lb">Load Balancers</a></li>
+      <li><a href="#dns">Route53 DNS</a></li>
+      <li><a href="#sg">Security Groups</a></li>
+      <li><a href="#iam">IAM Roles</a></li>
+      <li><a href="#s3">S3 Buckets</a></li>
+      <li><a href="#cost">Cost Estimate</a></li>
+      <li><a href="#install">Install Flow</a></li>
+      <li><a href="#gitops">GitOps &amp; ArgoCD</a></li>
+      <li><a href="#terraform">Terraform Structure</a></li>
+    </ol>
+  </nav>
+
+  <!-- 1. Overview -->
+  <section id="overview">
+    <h2>1. Architecture Overview</h2>
+    <p>
+      This reference documents the AWS infrastructure for a <strong>3-node OKD compact cluster</strong>.
+      All three nodes act as both control-plane <em>and</em> workers (no dedicated worker pool),
+      reducing cost while maintaining full etcd quorum. GitOps is managed via
+      <strong>ArgoCD</strong> connected to a GitHub repository.
+    </p>
+
+    <div class="card-grid">
+      <div class="card"><h4>Cluster Type</h4><p class="value">OKD Compact</p><p>3× master+worker nodes</p></div>
+      <div class="card"><h4>Cloud</h4><p class="value">AWS</p><p>Multi-AZ, single region</p></div>
+      <div class="card"><h4>Kubernetes</h4><p class="value">OKD 4.x</p><p>Open-source OpenShift</p></div>
+      <div class="card"><h4>GitOps</h4><p class="value">ArgoCD</p><p>Via OpenShift GitOps Operator</p></div>
+    </div>
+
+    <div class="diagram">
+<pre>
+                     Internet
+                         │
+              ┌──────────┴──────────┐
+              │      Route53        │
+              │  api.okd.example.com│
+              │  *.apps.okd...      │
+              └──────────┬──────────┘
+                         │
+              ┌──────────┴──────────┐
+              │   Internet Gateway  │
+              └──────────┬──────────┘
+                         │
+         ┌───────────────┼───────────────┐
+         │        Public Subnets         │
+         │  ┌─────────┐ ┌─────────────┐  │
+         │  │ Bastion │ │  Ext NLBs   │  │
+         │  │ t3.small│ │ API + Apps  │  │
+         │  └─────────┘ └──────┬──────┘  │
+         └────────────────────┼──────────┘
+                              │ (NAT GWs)
+         ┌────────────────────┼──────────┐
+         │       Private Subnets         │
+         │                              │
+         │  ┌──────────┐ ┌──────────┐ ┌──────────┐
+         │  │  Node 1  │ │  Node 2  │ │  Node 3  │
+         │  │ master + │ │ master + │ │ master + │
+         │  │  worker  │ │  worker  │ │  worker  │
+         │  │us-east-1a│ │us-east-1b│ │us-east-1c│
+         │  └──────────┘ └──────────┘ └──────────┘
+         │                                        │
+         │       ┌────────────────────┐           │
+         │       │  Internal API NLB  │           │
+         │       │  (6443 + 22623)    │           │
+         │       └────────────────────┘           │
+         └────────────────────────────────────────┘
+</pre>
+    </div>
+  </section>
+
+  <!-- 2. VPC -->
+  <section id="vpc">
+    <h2>2. VPC &amp; Networking</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Resource</th><th>CIDR / Value</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>VPC</td><td><code>10.0.0.0/16</code></td><td>Primary VPC</td></tr>
+          <tr><td>Pod Network (cluster CIDR)</td><td><code>10.128.0.0/14</code></td><td>OKD default</td></tr>
+          <tr><td>Service Network</td><td><code>172.30.0.0/16</code></td><td>OKD default</td></tr>
+          <tr><td>Public Subnet — us-east-1a</td><td><code>10.0.1.0/24</code></td><td>NAT GW, LBs, Bastion</td></tr>
+          <tr><td>Public Subnet — us-east-1b</td><td><code>10.0.2.0/24</code></td><td>NAT GW, LBs</td></tr>
+          <tr><td>Public Subnet — us-east-1c</td><td><code>10.0.3.0/24</code></td><td>NAT GW, LBs</td></tr>
+          <tr><td>Private Subnet — us-east-1a</td><td><code>10.0.10.0/24</code></td><td>Node 1</td></tr>
+          <tr><td>Private Subnet — us-east-1b</td><td><code>10.0.20.0/24</code></td><td>Node 2</td></tr>
+          <tr><td>Private Subnet — us-east-1c</td><td><code>10.0.30.0/24</code></td><td>Node 3</td></tr>
+          <tr><td>Internet Gateway</td><td>—</td><td>1× attached to VPC</td></tr>
+          <tr><td>NAT Gateways</td><td>—</td><td>3× (one per AZ) for HA; or 1× to reduce cost</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout tip">
+      <span class="icon">💡</span>
+      <div><strong>Cost tip:</strong> Use a single NAT Gateway in one AZ to save ~$65/mo. Acceptable for a lab environment; use 3× for production HA.</div>
+    </div>
+  </section>
+
+  <!-- 3. EC2 -->
+  <section id="ec2">
+    <h2>3. EC2 Instances</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Role</th><th>Type</th><th>OS</th><th>Subnet</th><th>Storage</th><th>Lifetime</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><span class="badge red">Bootstrap</span></td>
+            <td><code>m5.large</code></td>
+            <td>Fedora CoreOS</td>
+            <td>Public</td>
+            <td>120 GB gp3</td>
+            <td class="warn">~45 min (destroyed post-install)</td>
+          </tr>
+          <tr>
+            <td><span class="badge blue">Master+Worker ×3</span></td>
+            <td><code>m5.2xlarge</code></td>
+            <td>Fedora CoreOS</td>
+            <td>Private (1 per AZ)</td>
+            <td>120 GB gp3 + 100 GB etcd</td>
+            <td class="yes">Permanent</td>
+          </tr>
+          <tr>
+            <td><span class="badge grey">Bastion</span></td>
+            <td><code>t3.small</code></td>
+            <td>Amazon Linux 2</td>
+            <td>Public</td>
+            <td>20 GB gp3</td>
+            <td class="yes">Permanent</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout info">
+      <span class="icon">ℹ️</span>
+      <div><strong>Fedora CoreOS</strong> is an immutable, auto-updating OS. OKD manages it via the Machine Config Operator (MCO) — you do not install packages manually on nodes.</div>
+    </div>
+
+    <h3>Instance Sizing Reference</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Instance</th><th>vCPU</th><th>RAM</th><th>Verdict</th></tr></thead>
+        <tbody>
+          <tr><td><code>m5.xlarge</code></td><td>4</td><td>16 GB</td><td class="warn">Minimum — tight</td></tr>
+          <tr><td><code>m5.2xlarge</code></td><td>8</td><td>32 GB</td><td class="yes">Recommended</td></tr>
+          <tr><td><code>m5.4xlarge</code></td><td>16</td><td>64 GB</td><td class="yes">Comfortable for workloads</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 4. Load Balancers -->
+  <section id="lb">
+    <h2>4. Load Balancers</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>LB Name</th><th>Scheme</th><th>Type</th><th>Ports</th><th>Target</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>External API NLB</td>
+            <td><span class="badge blue">internet-facing</span></td>
+            <td>NLB</td>
+            <td><code>6443</code></td>
+            <td>All 3 master nodes :6443</td>
+          </tr>
+          <tr>
+            <td>Internal API NLB</td>
+            <td><span class="badge grey">internal</span></td>
+            <td>NLB</td>
+            <td><code>6443</code>, <code>22623</code></td>
+            <td>All 3 master nodes (API + MCS)</td>
+          </tr>
+          <tr>
+            <td>Apps NLB</td>
+            <td><span class="badge blue">internet-facing</span></td>
+            <td>NLB</td>
+            <td><code>80</code>, <code>443</code></td>
+            <td>All 3 nodes (ingress router)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout info">
+      <span class="icon">ℹ️</span>
+      <div>Port <strong>22623</strong> is the <strong>Machine Config Server (MCS)</strong> — it serves ignition configs to nodes during boot. It must only be accessible <em>internally</em> from within the VPC.</div>
+    </div>
+  </section>
+
+  <!-- 5. DNS -->
+  <section id="dns">
+    <h2>5. Route53 DNS</h2>
+    <p>OKD requires specific DNS records to function. Both a public and private hosted zone are needed.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Record</th><th>Zone</th><th>Type</th><th>Target</th></tr></thead>
+        <tbody>
+          <tr><td><code>api.okd-prod.example.com</code></td><td>Public</td><td>A (alias)</td><td>External API NLB</td></tr>
+          <tr><td><code>*.apps.okd-prod.example.com</code></td><td>Public</td><td>A (alias)</td><td>Apps NLB</td></tr>
+          <tr><td><code>api.okd-prod.example.com</code></td><td>Private</td><td>A (alias)</td><td>Internal API NLB</td></tr>
+          <tr><td><code>api-int.okd-prod.example.com</code></td><td>Private</td><td>A (alias)</td><td>Internal API NLB</td></tr>
+          <tr><td><code>*.apps.okd-prod.example.com</code></td><td>Private</td><td>A (alias)</td><td>Apps NLB</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Auto-created App Routes (post-install)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>URL</th><th>Service</th></tr></thead>
+        <tbody>
+          <tr><td><code>console.apps.okd-prod.example.com</code></td><td>OKD Web Console</td></tr>
+          <tr><td><code>oauth-openshift.apps.okd-prod.example.com</code></td><td>OAuth / Login</td></tr>
+          <tr><td><code>argocd.apps.okd-prod.example.com</code></td><td>ArgoCD UI (post-install)</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 6. Security Groups -->
+  <section id="sg">
+    <h2>6. Security Groups</h2>
+
+    <h3>Control Plane / Master Nodes</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Port(s)</th><th>Protocol</th><th>Source</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>6443</td><td>TCP</td><td>0.0.0.0/0</td><td>Kubernetes API</td></tr>
+          <tr><td>22623</td><td>TCP</td><td>VPC CIDR</td><td>Machine Config Server (internal only)</td></tr>
+          <tr><td>2379–2380</td><td>TCP</td><td>Control Plane SG</td><td>etcd client + peer</td></tr>
+          <tr><td>10250</td><td>TCP</td><td>VPC CIDR</td><td>kubelet</td></tr>
+          <tr><td>9000–9999</td><td>TCP</td><td>VPC CIDR</td><td>Host-level services</td></tr>
+          <tr><td>4789</td><td>UDP</td><td>VPC CIDR</td><td>VXLAN (OVN-Kubernetes)</td></tr>
+          <tr><td>6081</td><td>UDP</td><td>VPC CIDR</td><td>Geneve (OVN)</td></tr>
+          <tr><td>500, 4500</td><td>UDP</td><td>VPC CIDR</td><td>IPsec IKE</td></tr>
+          <tr><td>80, 443</td><td>TCP</td><td>0.0.0.0/0</td><td>Ingress router</td></tr>
+          <tr><td>22</td><td>TCP</td><td>Bastion SG</td><td>SSH (jump via bastion)</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Bastion Host</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Port</th><th>Protocol</th><th>Source</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>22</td><td>TCP</td><td>Your IP/CIDR</td><td>SSH access</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 7. IAM -->
+  <section id="iam">
+    <h2>7. IAM Roles &amp; Policies</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Role</th><th>Attached To</th><th>Key Permissions</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>okd-master-role</code></td>
+            <td>Master node instance profile</td>
+            <td>ec2:*, elasticloadbalancing:*, iam:PassRole, route53:*, s3:GetObject/PutObject/DeleteObject, sts:AssumeRole</td>
+          </tr>
+          <tr>
+            <td><code>okd-worker-role</code></td>
+            <td>Worker node instance profile</td>
+            <td>ec2:Describe*, s3:GetObject</td>
+          </tr>
+          <tr>
+            <td><code>okd-installer-role</code></td>
+            <td>CI/CD / local install user</td>
+            <td>AdministratorAccess (scoped) — used only during cluster provisioning</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout warn">
+      <span class="icon">⚠️</span>
+      <div><strong>Security note:</strong> The installer IAM user/role requires broad permissions during provisioning. Remove or restrict it after the cluster is running.</div>
+    </div>
+  </section>
+
+  <!-- 8. S3 -->
+  <section id="s3">
+    <h2>8. S3 Buckets</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Bucket</th><th>Purpose</th><th>Access</th><th>Lifecycle</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>okd-bootstrap-&lt;cluster-id&gt;</code></td>
+            <td>Stores <code>bootstrap.ign</code> ignition file</td>
+            <td>Public read (bootstrap node fetches it)</td>
+            <td class="warn">Delete after install (~45 min)</td>
+          </tr>
+          <tr>
+            <td><code>okd-image-registry-&lt;cluster-id&gt;</code></td>
+            <td>OKD internal image registry backend</td>
+            <td>Master IAM role only</td>
+            <td class="yes">Permanent, versioning enabled</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- 9. Cost -->
+  <section id="cost">
+    <h2>9. Cost Estimate (us-east-1, On-Demand)</h2>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Resource</th><th>Qty</th><th>Unit Cost</th><th>Monthly Est.</th></tr></thead>
+        <tbody>
+          <tr><td>m5.2xlarge (master+worker)</td><td>3</td><td>$0.384/hr</td><td>~$840</td></tr>
+          <tr><td>t3.small (bastion)</td><td>1</td><td>$0.023/hr</td><td>~$17</td></tr>
+          <tr><td>NLB</td><td>3</td><td>~$16/mo each</td><td>~$50</td></tr>
+          <tr><td>NAT Gateway (HA — 3×)</td><td>3</td><td>~$35/mo each</td><td>~$105</td></tr>
+          <tr><td>NAT Gateway (single)</td><td>1</td><td>~$35/mo</td><td>~$35</td></tr>
+          <tr><td>EBS gp3 storage (all nodes)</td><td>~660 GB</td><td>$0.08/GB</td><td>~$53</td></tr>
+          <tr><td>Route53 hosted zones</td><td>2</td><td>$0.50/zone</td><td>~$1</td></tr>
+          <tr><td>S3 + data transfer</td><td>—</td><td>—</td><td>~$20</td></tr>
+        </tbody>
+        <tfoot>
+          <tr style="background:#222536">
+            <td colspan="3"><strong>Total (3× NAT — HA)</strong></td>
+            <td><strong>~$1,086/mo</strong></td>
+          </tr>
+          <tr style="background:#222536">
+            <td colspan="3"><strong>Total (1× NAT — lab)</strong></td>
+            <td><strong>~$1,016/mo</strong></td>
+          </tr>
+          <tr style="background:#222536">
+            <td colspan="3"><strong>With 1yr Reserved Instances (~40% discount on EC2)</strong></td>
+            <td class="yes"><strong>~$640–700/mo</strong></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <div class="callout tip">
+      <span class="icon">💡</span>
+      <div><strong>Cost optimization:</strong> Purchase 1-year Reserved Instances for the 3 master nodes to cut EC2 costs by ~40%. Alternatively, use <code>m5.xlarge</code> (minimum spec) for dev/lab use only.</div>
+    </div>
+  </section>
+
+  <!-- 10. Install Flow -->
+  <section id="install">
+    <h2>10. Install Flow</h2>
+
+    <ul class="steps">
+      <li>
+        <div class="step-num">1</div>
+        <div><strong>Terraform — Core Infrastructure</strong><br>
+        Provision VPC, subnets, IGW, NAT GWs, route tables, security groups, IAM roles, NLBs, Route53 zones + records, S3 buckets.</div>
+      </li>
+      <li>
+        <div class="step-num">2</div>
+        <div><strong>Generate Ignition Configs</strong><br>
+        Run <code>openshift-install create install-config</code>, customize <code>install-config.yaml</code> for compact topology (3 replicas, 0 workers), then run <code>openshift-install create ignition-configs</code>.</div>
+      </li>
+      <li>
+        <div class="step-num">3</div>
+        <div><strong>Upload Bootstrap Ignition</strong><br>
+        Upload <code>bootstrap.ign</code> to the S3 bootstrap bucket. Master ignition files reference the MCS for their own configs.</div>
+      </li>
+      <li>
+        <div class="step-num">4</div>
+        <div><strong>Terraform — Bootstrap + Master EC2</strong><br>
+        Launch the temporary bootstrap node and all 3 master nodes using the ignition configs as EC2 user-data.</div>
+      </li>
+      <li>
+        <div class="step-num">5</div>
+        <div><strong>Bootstrap Process (~30–45 min)</strong><br>
+        Bootstrap node starts a temporary control plane. Master nodes boot, pull their ignition configs from MCS, join etcd quorum, and take over as permanent control plane. Bootstrap node is then terminated.</div>
+      </li>
+      <li>
+        <div class="step-num">6</div>
+        <div><strong>Cluster Operators Stabilize</strong><br>
+        Run <code>openshift-install wait-for install-complete</code>. All cluster operators (console, image-registry, ingress, etc.) become available.</div>
+      </li>
+      <li>
+        <div class="step-num">7</div>
+        <div><strong>Post-Install: ArgoCD + GitOps</strong><br>
+        Install the OpenShift GitOps Operator via OperatorHub. Connect your GitHub repo. Deploy the app-of-apps ArgoCD Application.</div>
+      </li>
+    </ul>
+
+    <h3>Key CLI Commands</h3>
+    <pre>
+# Download OKD installer
+wget https://github.com/okd-project/okd/releases/download/&lt;version&gt;/openshift-install-linux.tar.gz
+tar -xzf openshift-install-linux.tar.gz
+
+# Create install config
+./openshift-install create install-config --dir=./cluster-config
+
+# Generate ignition configs
+./openshift-install create ignition-configs --dir=./cluster-config
+
+# Monitor bootstrap
+./openshift-install wait-for bootstrap-complete --dir=./cluster-config --log-level=info
+
+# Monitor install completion
+./openshift-install wait-for install-complete --dir=./cluster-config --log-level=info
+
+# Access cluster
+export KUBECONFIG=./cluster-config/auth/kubeconfig
+oc get nodes
+oc get clusteroperators
+    </pre>
+
+    <h3>install-config.yaml (compact topology)</h3>
+    <pre>
+apiVersion: v1
+baseDomain: example.com
+metadata:
+  name: okd-prod
+compute:
+  - name: worker
+    replicas: 0            # Compact: no dedicated workers
+controlPlane:
+  name: master
+  replicas: 3
+  platform:
+    aws:
+      type: m5.2xlarge
+      zones:
+        - us-east-1a
+        - us-east-1b
+        - us-east-1c
+platform:
+  aws:
+    region: us-east-1
+pullSecret: '{"auths": ...}'   # Use fake pull secret for OKD
+sshKey: |
+  ssh-rsa AAAA...              # Your public SSH key
+    </pre>
+
+    <div class="callout info">
+      <span class="icon">ℹ️</span>
+      <div>OKD does not require a Red Hat pull secret. Use the fake pull secret from the <a href="https://okd.io" target="_blank">OKD documentation</a> or leave it as <code>{"auths":{"fake":{"auth":"aWQ6cGFzcwo="}}}</code>.</div>
+    </div>
+  </section>
+
+  <!-- 11. GitOps -->
+  <section id="gitops">
+    <h2>11. GitOps &amp; ArgoCD</h2>
+
+    <h3>Install OpenShift GitOps Operator</h3>
+    <pre>
+# Via CLI (or use OperatorHub web console)
+oc apply -f - &lt;&lt;EOF
+apiVersion: operators.coreos.com/v1alpha1
+kind: Subscription
+metadata:
+  name: openshift-gitops-operator
+  namespace: openshift-operators
+spec:
+  channel: latest
+  name: openshift-gitops-operator
+  source: community-operators
+  sourceNamespace: openshift-marketplace
+EOF
+
+# Get ArgoCD admin password
+oc extract secret/openshift-gitops-cluster \
+  -n openshift-gitops --to=-
+    </pre>
+
+    <h3>GitOps Repository Structure</h3>
+    <pre>
+OKD-lab/
+├── gitops/
+│   ├── apps/
+│   │   ├── app-of-apps.yaml       # Root ArgoCD Application
+│   │   └── my-app.yaml            # Child Application per service
+│   ├── infrastructure/
+│   │   ├── cert-manager/
+│   │   ├── ingress/
+│   │   └── monitoring/
+│   └── services/
+│       └── my-app/
+│           ├── deployment.yaml
+│           ├── service.yaml
+│           └── route.yaml
+└── terraform/
+    └── ...
+    </pre>
+
+    <h3>App-of-Apps Pattern</h3>
+    <pre>
+# gitops/apps/app-of-apps.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: app-of-apps
+  namespace: openshift-gitops
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/4mcqueens/OKD-lab
+    targetRevision: main
+    path: gitops/apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: openshift-gitops
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    </pre>
+  </section>
+
+  <!-- 12. Terraform -->
+  <section id="terraform">
+    <h2>12. Terraform Structure</h2>
+    <pre>
+terraform/
+├── main.tf                          # Root module — calls all child modules
+├── variables.tf                     # Input variables
+├── outputs.tf                       # Output values
+├── versions.tf                      # Required providers + versions
+├── modules/
+│   ├── vpc/                         # VPC, subnets, IGW, NAT GWs, route tables
+│   ├── security-groups/             # All security group definitions
+│   ├── iam/                         # IAM roles, policies, instance profiles
+│   ├── load-balancers/              # NLBs + target groups + listeners
+│   ├── dns/                         # Route53 public + private zones + records
+│   ├── s3/                          # Bootstrap + image registry buckets
+│   └── ec2/                         # Bootstrap node + master nodes
+└── environments/
+    └── okd-prod/
+        ├── main.tf                  # Environment-specific root
+        ├── terraform.tfvars         # Env variable values
+        └── backend.tf               # S3 remote state config
+    </pre>
+  </section>
+
+</div>
+
+<footer>
+  <p>
+    OKD-lab &nbsp;·&nbsp; <a href="https://github.com/4mcqueens/OKD-lab" target="_blank">github.com/4mcqueens/OKD-lab</a>
+    &nbsp;·&nbsp; <a href="https://okd.io" target="_blank">okd.io</a>
+    &nbsp;·&nbsp; <a href="https://argo-cd.readthedocs.io" target="_blank">ArgoCD Docs</a>
+    &nbsp;·&nbsp; Generated 2026-05-23
+  </p>
+</footer>
+
+</body>
+</html>

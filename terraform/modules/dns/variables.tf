@@ -1,0 +1,9 @@
+variable "cluster_name"         { type = string }
+variable "base_domain"          { type = string }
+variable "vpc_id"               { type = string }
+variable "api_nlb_ext_dns_name" { type = string }
+variable "api_nlb_ext_zone_id"  { type = string }
+variable "api_nlb_int_dns_name" { type = string }
+variable "api_nlb_int_zone_id"  { type = string }
+variable "apps_nlb_dns_name"    { type = string }
+variable "apps_nlb_zone_id"     { type = string }
