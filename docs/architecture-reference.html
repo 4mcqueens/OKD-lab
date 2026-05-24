@@ -6,16 +6,19 @@
   <title>OKD Lab — AWS Architecture Reference</title>
   <style>
     :root {
-      --bg:        #0f1117;
-      --surface:   #1a1d27;
-      --border:    #2e3147;
-      --accent:    #ee0000;   /* OKD / OpenShift red */
-      --accent2:   #4a9eff;
-      --text:      #e2e8f0;
-      --muted:     #8892a4;
-      --code-bg:   #0d1117;
-      --green:     #3fb950;
-      --yellow:    #d29922;
+      --bg:       #0f1117;
+      --surface:  #1a1d27;
+      --surface2: #20233a;
+      --border:   #2e3147;
+      --accent:   #ee0000;
+      --accent2:  #4a9eff;
+      --accent3:  #a78bfa;
+      --text:     #e2e8f0;
+      --muted:    #8892a4;
+      --code-bg:  #0d1117;
+      --green:    #3fb950;
+      --yellow:   #d29922;
+      --orange:   #e8882a;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -50,7 +53,7 @@
     /* ── Layout ── */
     .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
 
-    /* ── Nav / TOC ── */
+    /* ── Nav ── */
     nav {
       background: var(--surface);
       border: 1px solid var(--border);
@@ -83,7 +86,7 @@
     }
     p { color: var(--text); margin-bottom: 0.8rem; }
 
-    /* ── Code / Pre ── */
+    /* ── Code ── */
     pre, code {
       font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
       font-size: 0.83rem;
@@ -102,128 +105,85 @@
 
     /* ── Tables ── */
     .table-wrap { overflow-x: auto; margin-bottom: 1.2rem; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.88rem;
-    }
+    table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
     thead tr { background: #222536; }
     th {
-      text-align: left;
-      padding: 0.65rem 1rem;
-      color: var(--muted);
-      font-weight: 600;
-      text-transform: uppercase;
-      font-size: 0.75rem;
-      letter-spacing: 0.05em;
-      border-bottom: 2px solid var(--border);
+      text-align: left; padding: 0.65rem 1rem;
+      color: var(--muted); font-weight: 600;
+      text-transform: uppercase; font-size: 0.75rem;
+      letter-spacing: 0.05em; border-bottom: 2px solid var(--border);
     }
-    td {
-      padding: 0.6rem 1rem;
-      border-bottom: 1px solid var(--border);
-      vertical-align: top;
-    }
+    td { padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
     tr:hover td { background: rgba(255,255,255,0.03); }
     .yes  { color: var(--green);  font-weight: 600; }
     .no   { color: var(--muted); }
     .warn { color: var(--yellow); font-weight: 600; }
 
     /* ── Cards ── */
-    .card-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 1rem;
-      margin-bottom: 1.2rem;
-    }
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 1.1rem 1.3rem;
-    }
-    .card h4 { font-size: 0.85rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; margin-bottom: 1.2rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 1.1rem 1.3rem; }
+    .card h4 { font-size: 0.82rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 0.5rem; }
     .card p  { font-size: 0.92rem; color: var(--text); margin: 0; }
     .card .value { font-size: 1.1rem; font-weight: 700; color: #fff; }
 
+    /* ── Cost cards ── */
+    .cost-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.2rem; }
+    .cost-card { border-radius: 10px; padding: 1.2rem 1.4rem; border: 1px solid var(--border); }
+    .cost-card.rest    { background: #0a1f0a; border-color: var(--green); }
+    .cost-card.running { background: #0d1a2d; border-color: var(--accent2); }
+    .cost-card h4 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
+    .cost-card.rest h4    { color: var(--green); }
+    .cost-card.running h4 { color: var(--accent2); }
+    .cost-card .amount { font-size: 2rem; font-weight: 800; color: #fff; line-height: 1; }
+    .cost-card .unit   { font-size: 0.82rem; color: var(--muted); margin-top: 0.2rem; }
+    .cost-card .note   { font-size: 0.8rem; color: var(--muted); margin-top: 0.6rem; }
+
     /* ── Callout ── */
     .callout {
-      border-radius: 8px;
-      padding: 0.9rem 1.2rem;
-      margin: 1rem 0;
-      display: flex;
-      gap: 0.75rem;
-      font-size: 0.9rem;
+      border-radius: 8px; padding: 0.9rem 1.2rem;
+      margin: 1rem 0; display: flex; gap: 0.75rem; font-size: 0.9rem;
     }
-    .callout.tip    { background: #0d2d1a; border-left: 4px solid var(--green); }
-    .callout.warn   { background: #2a1f00; border-left: 4px solid var(--yellow); }
-    .callout.info   { background: #0d1a2d; border-left: 4px solid var(--accent2); }
-    .callout .icon  { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
-    .callout div    { color: var(--text); }
+    .callout.tip  { background: #0d2d1a; border-left: 4px solid var(--green); }
+    .callout.warn { background: #2a1f00; border-left: 4px solid var(--yellow); }
+    .callout.info { background: #0d1a2d; border-left: 4px solid var(--accent2); }
+    .callout.pi   { background: #1a1030; border-left: 4px solid var(--accent3); }
+    .callout .icon { font-size: 1.1rem; flex-shrink: 0; line-height: 1.6; }
+    .callout div  { color: var(--text); }
     .callout strong { color: #fff; }
 
     /* ── Badge ── */
-    .badge {
-      display: inline-block;
-      padding: 0.15em 0.6em;
-      border-radius: 4px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      margin-right: 0.3rem;
-    }
-    .badge.red    { background: #4d0a0a; color: #ff8080; }
-    .badge.blue   { background: #0a1a4d; color: #80b0ff; }
-    .badge.green  { background: #0a3d1a; color: #80ff80; }
-    .badge.grey   { background: #2a2d3a; color: #aab0c0; }
+    .badge { display: inline-block; padding: 0.15em 0.6em; border-radius: 4px; font-size: 0.78rem; font-weight: 600; margin-right: 0.3rem; }
+    .badge.red   { background: #4d0a0a; color: #ff8080; }
+    .badge.blue  { background: #0a1a4d; color: #80b0ff; }
+    .badge.green { background: #0a3d1a; color: #80ff80; }
+    .badge.grey  { background: #2a2d3a; color: #aab0c0; }
+    .badge.purple{ background: #2a1a4d; color: #c4a0ff; }
 
     /* ── Diagram ── */
-    .diagram {
-      background: var(--code-bg);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1.2rem 1.5rem;
-      overflow-x: auto;
-      margin: 1rem 0;
-    }
-    .diagram pre {
-      background: transparent;
-      border: none;
-      padding: 0;
-      margin: 0;
-      color: #a0d0ff;
-      font-size: 0.78rem;
-      line-height: 1.45;
-    }
+    .diagram { background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px; padding: 1.2rem 1.5rem; overflow-x: auto; margin: 1rem 0; }
+    .diagram pre { background: transparent; border: none; padding: 0; margin: 0; color: #a0d0ff; font-size: 0.76rem; line-height: 1.45; }
 
     /* ── Flow steps ── */
     .steps { list-style: none; padding: 0; }
-    .steps li {
-      display: flex;
-      gap: 1rem;
-      margin-bottom: 0.9rem;
-      align-items: flex-start;
-    }
+    .steps li { display: flex; gap: 1rem; margin-bottom: 0.9rem; align-items: flex-start; }
     .step-num {
-      background: var(--accent);
-      color: #fff;
-      font-weight: 700;
-      font-size: 0.8rem;
-      border-radius: 50%;
-      width: 26px; height: 26px;
+      background: var(--accent); color: #fff; font-weight: 700; font-size: 0.8rem;
+      border-radius: 50%; width: 26px; height: 26px;
       display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-      margin-top: 0.15rem;
+      flex-shrink: 0; margin-top: 0.15rem;
     }
     .steps li div { color: var(--text); }
     .steps li strong { color: #fff; }
 
+    /* ── Phase timeline ── */
+    .phases { display: flex; flex-direction: column; gap: 0.6rem; margin: 1rem 0; }
+    .phase { display: flex; gap: 1rem; align-items: center; background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.75rem 1rem; }
+    .phase-num { background: var(--accent2); color: #000; font-weight: 800; font-size: 0.75rem; border-radius: 4px; padding: 0.2em 0.5em; flex-shrink: 0; }
+    .phase-label { font-weight: 600; color: #fff; font-size: 0.9rem; }
+    .phase-time { color: var(--muted); font-size: 0.82rem; margin-left: auto; }
+
     /* ── Footer ── */
-    footer {
-      border-top: 1px solid var(--border);
-      padding: 1.5rem 2rem;
-      text-align: center;
-      color: var(--muted);
-      font-size: 0.82rem;
-    }
+    footer { border-top: 1px solid var(--border); padding: 1.5rem 2rem; text-align: center; color: var(--muted); font-size: 0.82rem; }
     footer a { color: var(--accent2); text-decoration: none; }
   </style>
 </head>
@@ -233,7 +193,7 @@
   <div class="logo">O</div>
   <div>
     <h1><span>OKD</span> Lab — AWS Architecture Reference</h1>
-    <p>3-node compact cluster &nbsp;·&nbsp; AWS EC2 &nbsp;·&nbsp; GitOps with ArgoCD &nbsp;·&nbsp; Generated 2026-05-23</p>
+    <p>3-node compact cluster &nbsp;·&nbsp; AWS EC2 &nbsp;·&nbsp; GitOps / ArgoCD &nbsp;·&nbsp; Ephemeral / cost-optimised &nbsp;·&nbsp; Updated 2026-05-23</p>
   </div>
 </header>
 
@@ -244,15 +204,18 @@
     <h2>Table of Contents</h2>
     <ol>
       <li><a href="#overview">Architecture Overview</a></li>
+      <li><a href="#lifecycle">Lab Lifecycle</a></li>
+      <li><a href="#control-node">External Control Node (Pi)</a></li>
       <li><a href="#vpc">VPC &amp; Networking</a></li>
       <li><a href="#ec2">EC2 Instances</a></li>
+      <li><a href="#node-access">Node Access</a></li>
       <li><a href="#lb">Load Balancers</a></li>
       <li><a href="#dns">Route53 DNS</a></li>
       <li><a href="#sg">Security Groups</a></li>
       <li><a href="#iam">IAM Roles</a></li>
       <li><a href="#s3">S3 Buckets</a></li>
-      <li><a href="#cost">Cost Estimate</a></li>
       <li><a href="#install">Install Flow</a></li>
+      <li><a href="#cost">Cost Model</a></li>
       <li><a href="#gitops">GitOps &amp; ArgoCD</a></li>
       <li><a href="#terraform">Terraform Structure</a></li>
     </ol>
@@ -262,451 +225,655 @@
   <section id="overview">
     <h2>1. Architecture Overview</h2>
     <p>
-      This reference documents the AWS infrastructure for a <strong>3-node OKD compact cluster</strong>.
-      All three nodes act as both control-plane <em>and</em> workers (no dedicated worker pool),
-      reducing cost while maintaining full etcd quorum. GitOps is managed via
-      <strong>ArgoCD</strong> connected to a GitHub repository.
+      A <strong>3-node OKD compact cluster</strong> on AWS where all nodes act as both control-plane
+      and workers. The cluster is <strong>ephemeral</strong> — created fresh for each lab session
+      and fully destroyed afterward. All configuration lives in GitHub; no data persists in AWS
+      between sessions.
+    </p>
+    <p>
+      There is <strong>no bastion host</strong>. The cluster is managed from an external
+      <strong>Raspberry Pi 5</strong> running the AWS CLI, Terraform, and <code>oc</code>.
+      Node shell access uses <code>oc debug node</code> through the API — no SSH or jump host required.
     </p>
 
     <div class="card-grid">
-      <div class="card"><h4>Cluster Type</h4><p class="value">OKD Compact</p><p>3× master+worker nodes</p></div>
-      <div class="card"><h4>Cloud</h4><p class="value">AWS</p><p>Multi-AZ, single region</p></div>
-      <div class="card"><h4>Kubernetes</h4><p class="value">OKD 4.x</p><p>Open-source OpenShift</p></div>
+      <div class="card"><h4>Cluster Type</h4><p class="value">OKD Compact</p><p>3× master+worker</p></div>
+      <div class="card"><h4>Instance Type</h4><p class="value">m6a.xlarge</p><p>4 vCPU / 16 GB — min viable</p></div>
+      <div class="card"><h4>Lifecycle</h4><p class="value">Ephemeral</p><p>Created &amp; destroyed each session</p></div>
       <div class="card"><h4>GitOps</h4><p class="value">ArgoCD</p><p>Via OpenShift GitOps Operator</p></div>
+      <div class="card"><h4>Control Node</h4><p class="value">Raspberry Pi 5</p><p>External — no EC2 bastion</p></div>
+      <div class="card"><h4>At-Rest Cost</h4><p class="value">~$2/mo</p><p>S3 tfstate only</p></div>
     </div>
 
     <div class="diagram">
 <pre>
-                     Internet
-                         │
-              ┌──────────┴──────────┐
-              │      Route53        │
-              │  api.okd.example.com│
-              │  *.apps.okd...      │
-              └──────────┬──────────┘
-                         │
-              ┌──────────┴──────────┐
-              │   Internet Gateway  │
-              └──────────┬──────────┘
-                         │
-         ┌───────────────┼───────────────┐
-         │        Public Subnets         │
-         │  ┌─────────┐ ┌─────────────┐  │
-         │  │ Bastion │ │  Ext NLBs   │  │
-         │  │ t3.small│ │ API + Apps  │  │
-         │  └─────────┘ └──────┬──────┘  │
-         └────────────────────┼──────────┘
-                              │ (NAT GWs)
-         ┌────────────────────┼──────────┐
-         │       Private Subnets         │
-         │                              │
-         │  ┌──────────┐ ┌──────────┐ ┌──────────┐
-         │  │  Node 1  │ │  Node 2  │ │  Node 3  │
-         │  │ master + │ │ master + │ │ master + │
-         │  │  worker  │ │  worker  │ │  worker  │
-         │  │us-east-1a│ │us-east-1b│ │us-east-1c│
-         │  └──────────┘ └──────────┘ └──────────┘
-         │                                        │
-         │       ┌────────────────────┐           │
-         │       │  Internal API NLB  │           │
-         │       │  (6443 + 22623)    │           │
-         │       └────────────────────┘           │
-         └────────────────────────────────────────┘
+  ┌─ Home Network ────────────────────────────┐
+  │                                           │
+  │   Raspberry Pi 5  (external control)      │
+  │   terraform · aws · openshift-install     │
+  │   oc · kubectl · cluster-config/          │
+  │                                           │
+  └───────────────┬───────────────────────────┘
+                  │  internet
+  ┌───────────────┼────────────────────────────────────────────────────────┐
+  │ AWS           │                                                        │
+  │               │ Route53  api.okd-lab.*  *.apps.okd-lab.*              │
+  │               │                                                        │
+  │  ┌────────────┴──────────────────────────────────────────────────┐    │
+  │  │                     VPC  10.0.0.0/16                          │    │
+  │  │                                                               │    │
+  │  │  ┌──── Public Subnets (/24 × 3 AZs) ────────────────────┐    │    │
+  │  │  │  [NAT GW]   [Ext API NLB]   [Apps NLB]               │    │    │
+  │  │  │  10.0.1-3.0/24                                        │    │    │
+  │  │  │  Bootstrap node (public IP, temporary during install) │    │    │
+  │  │  └───────────────────────────────────────────────────────┘    │    │
+  │  │                         ▼ NAT                                  │    │
+  │  │  ┌──── Private Subnets (/24 × 3 AZs) ───────────────────┐    │    │
+  │  │  │  10.0.10/20/30.0/24                                   │    │    │
+  │  │  │                                                       │    │    │
+  │  │  │  ┌──────────┐   ┌──────────┐   ┌──────────┐          │    │    │
+  │  │  │  │  Node 1  │   │  Node 2  │   │  Node 3  │          │    │    │
+  │  │  │  │  master+ │   │  master+ │   │  master+ │          │    │    │
+  │  │  │  │  worker  │   │  worker  │   │  worker  │          │    │    │
+  │  │  │  │ m6a.xlrg │   │ m6a.xlrg │   │ m6a.xlrg │          │    │    │
+  │  │  │  │ 4vCPU/16G│   │ 4vCPU/16G│   │ 4vCPU/16G│          │    │    │
+  │  │  │  │  100 GB  │   │  100 GB  │   │  100 GB  │          │    │    │
+  │  │  │  │  gp3 EBS │   │  gp3 EBS │   │  gp3 EBS │          │    │    │
+  │  │  │  └──────────┘   └──────────┘   └──────────┘          │    │    │
+  │  │  │                                                       │    │    │
+  │  │  │  [Internal API NLB — 6443 + 22623 MCS]               │    │    │
+  │  │  └───────────────────────────────────────────────────────┘    │    │
+  │  │                                                               │    │
+  │  │  [S3: bootstrap ignition]  [S3: image registry]  [Route53]   │    │
+  │  └───────────────────────────────────────────────────────────────┘    │
+  └────────────────────────────────────────────────────────────────────────┘
 </pre>
     </div>
   </section>
 
-  <!-- 2. VPC -->
-  <section id="vpc">
-    <h2>2. VPC &amp; Networking</h2>
+  <!-- 2. Lifecycle -->
+  <section id="lifecycle">
+    <h2>2. Lab Lifecycle</h2>
+    <p>
+      The cluster is <strong>created from scratch each session</strong> and torn down when done.
+      The only thing that persists between sessions is the Terraform state in S3 (~$2/mo)
+      and your Git repository.
+    </p>
 
+    <div class="phases">
+      <div class="phase"><span class="phase-num">lab-up</span><span class="phase-label">Phase 1 — Terraform: VPC, SGs, IAM, S3, NLBs, Route53</span><span class="phase-time">~5 min</span></div>
+      <div class="phase"><span class="phase-num">lab-up</span><span class="phase-label">Phase 2 — Generate ignition configs → upload to S3</span><span class="phase-time">~1 min</span></div>
+      <div class="phase"><span class="phase-num">lab-up</span><span class="phase-label">Phase 3 — Launch bootstrap + 3× master EC2 nodes</span><span class="phase-time">~2 min</span></div>
+      <div class="phase"><span class="phase-num">lab-up</span><span class="phase-label">Phase 4 — Bootstrap process → bootstrap node destroyed</span><span class="phase-time">~35 min</span></div>
+      <div class="phase"><span class="phase-num">lab-up</span><span class="phase-label">Phase 5 — Cluster operators stabilise → cluster ready</span><span class="phase-time">~10 min</span></div>
+    </div>
+
+    <pre>
+# Start a session
+./scripts/lab-up.sh
+
+# Optional flags if resuming a failed run:
+./scripts/lab-up.sh --skip-infra        # Infra already exists
+./scripts/lab-up.sh --skip-infra --skip-ignition   # Nodes not yet launched
+
+# Access the cluster
+export KUBECONFIG=./cluster-config/auth/kubeconfig
+oc get nodes
+oc get clusteroperators
+
+# Tear down when done — AWS cost drops to ~$2/mo immediately
+./scripts/lab-down.sh</pre>
+
+    <div class="callout tip">
+      <span class="icon">💡</span>
+      <div><strong>All state in Git.</strong> Before running <code>lab-down.sh</code>, push any
+      in-cluster config changes to GitHub via ArgoCD. The cluster rebuilds from the repo —
+      nothing needs to survive in AWS.</div>
+    </div>
+  </section>
+
+  <!-- 3. External Control Node -->
+  <section id="control-node">
+    <h2>3. External Control Node — Raspberry Pi 5</h2>
+    <p>
+      Instead of an EC2 bastion host (~$17/mo, always on), the lab is managed entirely from a
+      <strong>Raspberry Pi 5</strong> located outside AWS. The Pi replaces the bastion at zero
+      incremental cost.
+    </p>
+
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Detail</th><th>Value</th></tr></thead>
+        <tbody>
+          <tr><td>Hardware</td><td>Raspberry Pi 5 Model B</td></tr>
+          <tr><td>Architecture</td><td><code>aarch64</code> (ARM64)</td></tr>
+          <tr><td>Public IP</td><td><code>154.47.25.17</code> ⚠️ verify before each session if dynamic</td></tr>
+          <tr><td>Cost</td><td class="yes">$0/mo — already owned</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Required Tools (all have aarch64 builds)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Tool</th><th>Purpose</th><th>Status</th><th>Install Source</th></tr></thead>
+        <tbody>
+          <tr><td><code>terraform</code></td><td>Infrastructure provisioning</td><td class="warn">Not installed</td><td>hashicorp.com → Linux ARM64</td></tr>
+          <tr><td><code>aws</code></td><td>AWS CLI operations</td><td class="warn">Not installed</td><td>AWS docs → aarch64 package</td></tr>
+          <tr><td><code>openshift-install</code></td><td>OKD cluster installer</td><td class="warn">Not installed</td><td>OKD releases → linux-arm64.tar.gz</td></tr>
+          <tr><td><code>oc</code></td><td>OKD / Kubernetes CLI</td><td class="warn">Not installed</td><td>OKD mirror → client-linux-arm64</td></tr>
+          <tr><td><code>envsubst</code></td><td>Render install-config template</td><td class="yes">✓ Installed</td><td>Already present</td></tr>
+          <tr><td><code>git</code></td><td>Source control</td><td class="yes">✓ Installed</td><td>Already present</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Network Connectivity</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Target</th><th>Port</th><th>When</th><th>How</th></tr></thead>
+        <tbody>
+          <tr><td>AWS API endpoints</td><td>443</td><td>Always</td><td>Internet (terraform / aws CLI)</td></tr>
+          <tr><td>Bootstrap node public IP</td><td>22, 19531</td><td>Install only (~45 min)</td><td>Internet → bootstrap SG allows Pi's IP</td></tr>
+          <tr><td><code>api.okd-lab.&lt;domain&gt;:6443</code></td><td>6443</td><td>After install</td><td>Internet → External API NLB → masters</td></tr>
+          <tr><td><code>*.apps.okd-lab.&lt;domain&gt;</code></td><td>443</td><td>After install</td><td>Internet → Apps NLB → ingress router</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout pi">
+      <span class="icon">🔒</span>
+      <div><strong>Tighten the bootstrap SG.</strong> Set <code>installer_allowed_cidr = "154.47.25.17/32"</code>
+      in <code>terraform.tfvars</code> so only the Pi can reach bootstrap ports 22 and 19531.
+      If your home IP is dynamic, run <code>curl ifconfig.me</code> and update before each session.</div>
+    </div>
+
+    <h3>install-config-template.yaml — What It Does</h3>
+    <p>
+      The OKD installer requires an <code>install-config.yaml</code> file that defines the cluster —
+      region, subnets, instance types, domain name, SSH key, and pull secret. This file is
+      <strong>consumed (deleted) by the installer</strong> when it generates ignition configs,
+      so it cannot be reused as-is.
+    </p>
+    <p>
+      <code>scripts/install-config-template.yaml</code> solves this by using
+      <code>${VARIABLE}</code> placeholders that <code>lab-up.sh</code> populates at runtime
+      using values pulled live from Terraform outputs (subnet IDs, cluster name, AZs, etc.).
+      A fresh <code>install-config.yaml</code> is rendered to <code>cluster-config/</code>
+      each session — never committed to Git.
+    </p>
+    <pre>
+# Simplified flow inside lab-up.sh:
+
+# 1. Pull subnet IDs from terraform outputs
+PRIVATE_SUBNET_1=$(terraform output -json private_subnet_ids | python3 -c "...")
+
+# 2. Export variables
+export BASE_DOMAIN CLUSTER_NAME MASTER_INSTANCE_TYPE PRIVATE_SUBNET_1 ...
+
+# 3. Render template → install-config.yaml
+envsubst &lt; scripts/install-config-template.yaml &gt; cluster-config/install-config.yaml
+
+# 4. openshift-install consumes install-config.yaml and generates ignition configs
+openshift-install create ignition-configs --dir=cluster-config/
+# install-config.yaml is now deleted by the installer
+
+# 5. Upload ignition to S3 so EC2 nodes can fetch them on first boot
+aws s3 cp cluster-config/bootstrap.ign s3://&lt;bucket&gt;/bootstrap.ign
+aws s3 cp cluster-config/master.ign    s3://&lt;bucket&gt;/master.ign</pre>
+
+    <div class="callout info">
+      <span class="icon">ℹ️</span>
+      <div>The <strong>fake pull secret</strong> <code>{"auths":{"fake":{"auth":"aWQ6cGFzcwo="}}}</code>
+      is used in the template. OKD is open-source and does not require a Red Hat account or
+      a real pull secret.</div>
+    </div>
+  </section>
+
+  <!-- 4. VPC -->
+  <section id="vpc">
+    <h2>4. VPC &amp; Networking</h2>
     <div class="table-wrap">
       <table>
         <thead><tr><th>Resource</th><th>CIDR / Value</th><th>Notes</th></tr></thead>
         <tbody>
-          <tr><td>VPC</td><td><code>10.0.0.0/16</code></td><td>Primary VPC</td></tr>
+          <tr><td>VPC</td><td><code>10.0.0.0/16</code></td><td></td></tr>
           <tr><td>Pod Network (cluster CIDR)</td><td><code>10.128.0.0/14</code></td><td>OKD default</td></tr>
           <tr><td>Service Network</td><td><code>172.30.0.0/16</code></td><td>OKD default</td></tr>
-          <tr><td>Public Subnet — us-east-1a</td><td><code>10.0.1.0/24</code></td><td>NAT GW, LBs, Bastion</td></tr>
-          <tr><td>Public Subnet — us-east-1b</td><td><code>10.0.2.0/24</code></td><td>NAT GW, LBs</td></tr>
-          <tr><td>Public Subnet — us-east-1c</td><td><code>10.0.3.0/24</code></td><td>NAT GW, LBs</td></tr>
-          <tr><td>Private Subnet — us-east-1a</td><td><code>10.0.10.0/24</code></td><td>Node 1</td></tr>
-          <tr><td>Private Subnet — us-east-1b</td><td><code>10.0.20.0/24</code></td><td>Node 2</td></tr>
-          <tr><td>Private Subnet — us-east-1c</td><td><code>10.0.30.0/24</code></td><td>Node 3</td></tr>
-          <tr><td>Internet Gateway</td><td>—</td><td>1× attached to VPC</td></tr>
-          <tr><td>NAT Gateways</td><td>—</td><td>3× (one per AZ) for HA; or 1× to reduce cost</td></tr>
+          <tr><td>Public Subnet — us-east-1a</td><td><code>10.0.1.0/24</code></td><td>NAT GW, NLBs, bootstrap</td></tr>
+          <tr><td>Public Subnet — us-east-1b</td><td><code>10.0.2.0/24</code></td><td>NAT GW, NLBs</td></tr>
+          <tr><td>Public Subnet — us-east-1c</td><td><code>10.0.3.0/24</code></td><td>NAT GW, NLBs</td></tr>
+          <tr><td>Private Subnet — us-east-1a</td><td><code>10.0.10.0/24</code></td><td>Master Node 1</td></tr>
+          <tr><td>Private Subnet — us-east-1b</td><td><code>10.0.20.0/24</code></td><td>Master Node 2</td></tr>
+          <tr><td>Private Subnet — us-east-1c</td><td><code>10.0.30.0/24</code></td><td>Master Node 3</td></tr>
+          <tr><td>Internet Gateway</td><td>—</td><td>1× per VPC</td></tr>
+          <tr><td>NAT Gateway</td><td>—</td><td><strong>1× only</strong> — single AZ for lab cost saving (~$33/mo)</td></tr>
         </tbody>
       </table>
     </div>
-
-    <div class="callout tip">
-      <span class="icon">💡</span>
-      <div><strong>Cost tip:</strong> Use a single NAT Gateway in one AZ to save ~$65/mo. Acceptable for a lab environment; use 3× for production HA.</div>
-    </div>
   </section>
 
-  <!-- 3. EC2 -->
+  <!-- 5. EC2 -->
   <section id="ec2">
-    <h2>3. EC2 Instances</h2>
+    <h2>5. EC2 Instances</h2>
+
+    <div class="callout info">
+      <span class="icon">ℹ️</span>
+      <div><strong>No bastion host.</strong> All cluster management is done from the external
+      Raspberry Pi using <code>oc</code> / <code>kubectl</code> via the API NLB.
+      Node-level shell access uses <code>oc debug node/&lt;name&gt;</code>.</div>
+    </div>
 
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Role</th><th>Type</th><th>OS</th><th>Subnet</th><th>Storage</th><th>Lifetime</th></tr></thead>
+        <thead><tr><th>Role</th><th>Instance</th><th>OS</th><th>Subnet</th><th>Storage</th><th>Lifetime</th></tr></thead>
         <tbody>
           <tr>
             <td><span class="badge red">Bootstrap</span></td>
-            <td><code>m5.large</code></td>
+            <td><code>m6a.large</code></td>
             <td>Fedora CoreOS</td>
-            <td>Public</td>
-            <td>120 GB gp3</td>
-            <td class="warn">~45 min (destroyed post-install)</td>
+            <td>Public (needs public IP)</td>
+            <td>100 GB gp3 (ephemeral)</td>
+            <td class="warn">~45 min — destroyed by lab-up.sh</td>
           </tr>
           <tr>
             <td><span class="badge blue">Master+Worker ×3</span></td>
-            <td><code>m5.2xlarge</code></td>
+            <td><code>m6a.xlarge</code></td>
             <td>Fedora CoreOS</td>
             <td>Private (1 per AZ)</td>
-            <td>120 GB gp3 + 100 GB etcd</td>
-            <td class="yes">Permanent</td>
-          </tr>
-          <tr>
-            <td><span class="badge grey">Bastion</span></td>
-            <td><code>t3.small</code></td>
-            <td>Amazon Linux 2</td>
-            <td>Public</td>
-            <td>20 GB gp3</td>
-            <td class="yes">Permanent</td>
+            <td>100 GB gp3 (ephemeral)</td>
+            <td class="yes">Session duration only</td>
           </tr>
         </tbody>
       </table>
     </div>
 
-    <div class="callout info">
-      <span class="icon">ℹ️</span>
-      <div><strong>Fedora CoreOS</strong> is an immutable, auto-updating OS. OKD manages it via the Machine Config Operator (MCO) — you do not install packages manually on nodes.</div>
-    </div>
-
-    <h3>Instance Sizing Reference</h3>
+    <h3>Master Node Specs</h3>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Instance</th><th>vCPU</th><th>RAM</th><th>Verdict</th></tr></thead>
+        <thead><tr><th>Spec</th><th>Value</th><th>Notes</th></tr></thead>
         <tbody>
-          <tr><td><code>m5.xlarge</code></td><td>4</td><td>16 GB</td><td class="warn">Minimum — tight</td></tr>
-          <tr><td><code>m5.2xlarge</code></td><td>8</td><td>32 GB</td><td class="yes">Recommended</td></tr>
-          <tr><td><code>m5.4xlarge</code></td><td>16</td><td>64 GB</td><td class="yes">Comfortable for workloads</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- 4. Load Balancers -->
-  <section id="lb">
-    <h2>4. Load Balancers</h2>
-
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>LB Name</th><th>Scheme</th><th>Type</th><th>Ports</th><th>Target</th></tr></thead>
-        <tbody>
-          <tr>
-            <td>External API NLB</td>
-            <td><span class="badge blue">internet-facing</span></td>
-            <td>NLB</td>
-            <td><code>6443</code></td>
-            <td>All 3 master nodes :6443</td>
-          </tr>
-          <tr>
-            <td>Internal API NLB</td>
-            <td><span class="badge grey">internal</span></td>
-            <td>NLB</td>
-            <td><code>6443</code>, <code>22623</code></td>
-            <td>All 3 master nodes (API + MCS)</td>
-          </tr>
-          <tr>
-            <td>Apps NLB</td>
-            <td><span class="badge blue">internet-facing</span></td>
-            <td>NLB</td>
-            <td><code>80</code>, <code>443</code></td>
-            <td>All 3 nodes (ingress router)</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-
-    <div class="callout info">
-      <span class="icon">ℹ️</span>
-      <div>Port <strong>22623</strong> is the <strong>Machine Config Server (MCS)</strong> — it serves ignition configs to nodes during boot. It must only be accessible <em>internally</em> from within the VPC.</div>
-    </div>
-  </section>
-
-  <!-- 5. DNS -->
-  <section id="dns">
-    <h2>5. Route53 DNS</h2>
-    <p>OKD requires specific DNS records to function. Both a public and private hosted zone are needed.</p>
-
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Record</th><th>Zone</th><th>Type</th><th>Target</th></tr></thead>
-        <tbody>
-          <tr><td><code>api.okd-prod.example.com</code></td><td>Public</td><td>A (alias)</td><td>External API NLB</td></tr>
-          <tr><td><code>*.apps.okd-prod.example.com</code></td><td>Public</td><td>A (alias)</td><td>Apps NLB</td></tr>
-          <tr><td><code>api.okd-prod.example.com</code></td><td>Private</td><td>A (alias)</td><td>Internal API NLB</td></tr>
-          <tr><td><code>api-int.okd-prod.example.com</code></td><td>Private</td><td>A (alias)</td><td>Internal API NLB</td></tr>
-          <tr><td><code>*.apps.okd-prod.example.com</code></td><td>Private</td><td>A (alias)</td><td>Apps NLB</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3>Auto-created App Routes (post-install)</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>URL</th><th>Service</th></tr></thead>
-        <tbody>
-          <tr><td><code>console.apps.okd-prod.example.com</code></td><td>OKD Web Console</td></tr>
-          <tr><td><code>oauth-openshift.apps.okd-prod.example.com</code></td><td>OAuth / Login</td></tr>
-          <tr><td><code>argocd.apps.okd-prod.example.com</code></td><td>ArgoCD UI (post-install)</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- 6. Security Groups -->
-  <section id="sg">
-    <h2>6. Security Groups</h2>
-
-    <h3>Control Plane / Master Nodes</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Port(s)</th><th>Protocol</th><th>Source</th><th>Purpose</th></tr></thead>
-        <tbody>
-          <tr><td>6443</td><td>TCP</td><td>0.0.0.0/0</td><td>Kubernetes API</td></tr>
-          <tr><td>22623</td><td>TCP</td><td>VPC CIDR</td><td>Machine Config Server (internal only)</td></tr>
-          <tr><td>2379–2380</td><td>TCP</td><td>Control Plane SG</td><td>etcd client + peer</td></tr>
-          <tr><td>10250</td><td>TCP</td><td>VPC CIDR</td><td>kubelet</td></tr>
-          <tr><td>9000–9999</td><td>TCP</td><td>VPC CIDR</td><td>Host-level services</td></tr>
-          <tr><td>4789</td><td>UDP</td><td>VPC CIDR</td><td>VXLAN (OVN-Kubernetes)</td></tr>
-          <tr><td>6081</td><td>UDP</td><td>VPC CIDR</td><td>Geneve (OVN)</td></tr>
-          <tr><td>500, 4500</td><td>UDP</td><td>VPC CIDR</td><td>IPsec IKE</td></tr>
-          <tr><td>80, 443</td><td>TCP</td><td>0.0.0.0/0</td><td>Ingress router</td></tr>
-          <tr><td>22</td><td>TCP</td><td>Bastion SG</td><td>SSH (jump via bastion)</td></tr>
-        </tbody>
-      </table>
-    </div>
-
-    <h3>Bastion Host</h3>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Port</th><th>Protocol</th><th>Source</th><th>Purpose</th></tr></thead>
-        <tbody>
-          <tr><td>22</td><td>TCP</td><td>Your IP/CIDR</td><td>SSH access</td></tr>
-        </tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- 7. IAM -->
-  <section id="iam">
-    <h2>7. IAM Roles &amp; Policies</h2>
-
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Role</th><th>Attached To</th><th>Key Permissions</th></tr></thead>
-        <tbody>
-          <tr>
-            <td><code>okd-master-role</code></td>
-            <td>Master node instance profile</td>
-            <td>ec2:*, elasticloadbalancing:*, iam:PassRole, route53:*, s3:GetObject/PutObject/DeleteObject, sts:AssumeRole</td>
-          </tr>
-          <tr>
-            <td><code>okd-worker-role</code></td>
-            <td>Worker node instance profile</td>
-            <td>ec2:Describe*, s3:GetObject</td>
-          </tr>
-          <tr>
-            <td><code>okd-installer-role</code></td>
-            <td>CI/CD / local install user</td>
-            <td>AdministratorAccess (scoped) — used only during cluster provisioning</td>
-          </tr>
+          <tr><td>vCPU</td><td>4</td><td>AMD EPYC Milan — minimum viable for compact OKD</td></tr>
+          <tr><td>RAM</td><td>16 GB</td><td>Tight but functional for lab workloads</td></tr>
+          <tr><td>Network</td><td>Up to 12.5 Gbps</td><td></td></tr>
+          <tr><td>Root volume</td><td>100 GB gp3, 3000 IOPS</td><td>OS + etcd on single volume — acceptable for ephemeral lab</td></tr>
+          <tr><td>etcd volume</td><td><em>None (removed)</em></td><td>Dedicated etcd EBS not needed — data is ephemeral</td></tr>
+          <tr><td>On-Demand price</td><td>$0.1728/hr each</td><td>$0.52/hr for all 3 nodes combined</td></tr>
+          <tr><td>delete_on_termination</td><td>true</td><td>No lingering EBS charges after lab-down</td></tr>
         </tbody>
       </table>
     </div>
 
     <div class="callout warn">
       <span class="icon">⚠️</span>
-      <div><strong>Security note:</strong> The installer IAM user/role requires broad permissions during provisioning. Remove or restrict it after the cluster is running.</div>
+      <div><strong>Upgrade path:</strong> If workloads need more headroom, change
+      <code>master_instance_type = "m6a.2xlarge"</code> in <code>terraform.tfvars</code>
+      (8 vCPU / 32 GB / $0.346/hr each). No other changes needed.</div>
     </div>
   </section>
 
-  <!-- 8. S3 -->
-  <section id="s3">
-    <h2>8. S3 Buckets</h2>
+  <!-- 6. Node Access -->
+  <section id="node-access">
+    <h2>6. Node Access — No SSH, No Bastion</h2>
+    <p>
+      Nodes run Fedora CoreOS, an immutable OS not intended for direct SSH management.
+      Three access methods are available, in order of preference:
+    </p>
 
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Bucket</th><th>Purpose</th><th>Access</th><th>Lifecycle</th></tr></thead>
+        <thead><tr><th>Method</th><th>Command</th><th>When to Use</th><th>Requires</th></tr></thead>
         <tbody>
           <tr>
-            <td><code>okd-bootstrap-&lt;cluster-id&gt;</code></td>
-            <td>Stores <code>bootstrap.ign</code> ignition file</td>
-            <td>Public read (bootstrap node fetches it)</td>
-            <td class="warn">Delete after install (~45 min)</td>
+            <td><strong>oc debug node</strong> <span class="badge green">Primary</span></td>
+            <td><code>oc debug node/&lt;node-name&gt;</code></td>
+            <td>Any runtime troubleshooting</td>
+            <td>Cluster running, valid KUBECONFIG</td>
           </tr>
           <tr>
-            <td><code>okd-image-registry-&lt;cluster-id&gt;</code></td>
-            <td>OKD internal image registry backend</td>
-            <td>Master IAM role only</td>
-            <td class="yes">Permanent, versioning enabled</td>
+            <td><strong>AWS SSM Session Manager</strong> <span class="badge blue">Backup</span></td>
+            <td><code>aws ssm start-session --target &lt;instance-id&gt;</code></td>
+            <td>Node unreachable via API</td>
+            <td>AWS CLI + SSM IAM policy (already attached)</td>
           </tr>
+          <tr>
+            <td><strong>EC2 Serial Console</strong> <span class="badge grey">Emergency</span></td>
+            <td>AWS Console → EC2 → Serial Console</td>
+            <td>Node won't boot / kernel panic</td>
+            <td>AWS Console access</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <pre>
+# Primary: get a root shell on any node (no SSH key, no bastion needed)
+oc debug node/okd-lab-master-0   -- chroot /host
+
+# Check node logs
+oc debug node/okd-lab-master-0   -- journalctl -u kubelet --no-pager -n 50
+
+# Backup: SSM (IAM policy already applied to master role)
+aws ssm start-session --target i-0abc123def456789</pre>
+  </section>
+
+  <!-- 7. Load Balancers -->
+  <section id="lb">
+    <h2>7. Load Balancers</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>NLB</th><th>Scheme</th><th>Ports</th><th>Targets</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>External API NLB</td>
+            <td><span class="badge blue">internet-facing</span></td>
+            <td><code>6443</code></td>
+            <td>3× master nodes (bootstrap during install)</td>
+          </tr>
+          <tr>
+            <td>Internal API NLB</td>
+            <td><span class="badge grey">internal</span></td>
+            <td><code>6443</code>, <code>22623</code> MCS</td>
+            <td>3× master nodes (bootstrap during install)</td>
+          </tr>
+          <tr>
+            <td>Apps NLB</td>
+            <td><span class="badge blue">internet-facing</span></td>
+            <td><code>80</code>, <code>443</code></td>
+            <td>3× master nodes (ingress router)</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout info">
+      <span class="icon">ℹ️</span>
+      <div>All three NLBs are <strong>created and destroyed each session</strong> by <code>lab-up.sh</code>
+      and <code>lab-down.sh</code>. They incur no cost at rest.</div>
+    </div>
+  </section>
+
+  <!-- 8. DNS -->
+  <section id="dns">
+    <h2>8. Route53 DNS</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Record</th><th>Zone</th><th>Target</th></tr></thead>
+        <tbody>
+          <tr><td><code>api.okd-lab.&lt;domain&gt;</code></td><td>Public</td><td>External API NLB (alias)</td></tr>
+          <tr><td><code>*.apps.okd-lab.&lt;domain&gt;</code></td><td>Public</td><td>Apps NLB (alias)</td></tr>
+          <tr><td><code>api.okd-lab.&lt;domain&gt;</code></td><td>Private (VPC)</td><td>Internal API NLB (alias)</td></tr>
+          <tr><td><code>api-int.okd-lab.&lt;domain&gt;</code></td><td>Private (VPC)</td><td>Internal API NLB (alias)</td></tr>
+          <tr><td><code>*.apps.okd-lab.&lt;domain&gt;</code></td><td>Private (VPC)</td><td>Apps NLB (alias)</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <h3>Auto-created app routes after install</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>URL</th><th>Service</th></tr></thead>
+        <tbody>
+          <tr><td><code>console.apps.okd-lab.&lt;domain&gt;</code></td><td>OKD Web Console</td></tr>
+          <tr><td><code>oauth-openshift.apps.okd-lab.&lt;domain&gt;</code></td><td>OAuth / Login</td></tr>
+          <tr><td><code>openshift-gitops-server-openshift-gitops.apps.okd-lab.&lt;domain&gt;</code></td><td>ArgoCD UI</td></tr>
         </tbody>
       </table>
     </div>
   </section>
 
-  <!-- 9. Cost -->
-  <section id="cost">
-    <h2>9. Cost Estimate (us-east-1, On-Demand)</h2>
+  <!-- 9. Security Groups -->
+  <section id="sg">
+    <h2>9. Security Groups</h2>
 
+    <p>Two security groups — no bastion SG. The bootstrap SG is locked to
+    <code>installer_allowed_cidr</code> (Pi's public IP) for SSH and log-streaming ports.</p>
+
+    <h3>Master Nodes SG</h3>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Resource</th><th>Qty</th><th>Unit Cost</th><th>Monthly Est.</th></tr></thead>
+        <thead><tr><th>Port(s)</th><th>Protocol</th><th>Source</th><th>Purpose</th></tr></thead>
         <tbody>
-          <tr><td>m5.2xlarge (master+worker)</td><td>3</td><td>$0.384/hr</td><td>~$840</td></tr>
-          <tr><td>t3.small (bastion)</td><td>1</td><td>$0.023/hr</td><td>~$17</td></tr>
-          <tr><td>NLB</td><td>3</td><td>~$16/mo each</td><td>~$50</td></tr>
-          <tr><td>NAT Gateway (HA — 3×)</td><td>3</td><td>~$35/mo each</td><td>~$105</td></tr>
-          <tr><td>NAT Gateway (single)</td><td>1</td><td>~$35/mo</td><td>~$35</td></tr>
-          <tr><td>EBS gp3 storage (all nodes)</td><td>~660 GB</td><td>$0.08/GB</td><td>~$53</td></tr>
-          <tr><td>Route53 hosted zones</td><td>2</td><td>$0.50/zone</td><td>~$1</td></tr>
-          <tr><td>S3 + data transfer</td><td>—</td><td>—</td><td>~$20</td></tr>
+          <tr><td>6443</td><td>TCP</td><td>0.0.0.0/0</td><td>Kubernetes API</td></tr>
+          <tr><td>22623</td><td>TCP</td><td>VPC CIDR</td><td>Machine Config Server (internal only)</td></tr>
+          <tr><td>2379–2380</td><td>TCP</td><td>Self (master SG)</td><td>etcd client + peer</td></tr>
+          <tr><td>10250</td><td>TCP</td><td>VPC CIDR</td><td>kubelet API</td></tr>
+          <tr><td>9000–9999</td><td>TCP</td><td>VPC CIDR</td><td>Host-level services</td></tr>
+          <tr><td>4789</td><td>UDP</td><td>VPC CIDR</td><td>VXLAN — OVN-Kubernetes</td></tr>
+          <tr><td>6081</td><td>UDP</td><td>VPC CIDR</td><td>Geneve — OVN</td></tr>
+          <tr><td>500, 4500</td><td>UDP</td><td>VPC CIDR</td><td>IPsec IKE / NAT-T</td></tr>
+          <tr><td>80, 443</td><td>TCP</td><td>0.0.0.0/0</td><td>Ingress router (HTTP/HTTPS)</td></tr>
+          <tr><td>1936</td><td>TCP</td><td>VPC CIDR</td><td>Ingress router health check (NLB)</td></tr>
+          <tr><td><em>22 — removed</em></td><td>—</td><td>—</td><td>No SSH — use <code>oc debug node</code></td></tr>
         </tbody>
-        <tfoot>
-          <tr style="background:#222536">
-            <td colspan="3"><strong>Total (3× NAT — HA)</strong></td>
-            <td><strong>~$1,086/mo</strong></td>
-          </tr>
-          <tr style="background:#222536">
-            <td colspan="3"><strong>Total (1× NAT — lab)</strong></td>
-            <td><strong>~$1,016/mo</strong></td>
-          </tr>
-          <tr style="background:#222536">
-            <td colspan="3"><strong>With 1yr Reserved Instances (~40% discount on EC2)</strong></td>
-            <td class="yes"><strong>~$640–700/mo</strong></td>
-          </tr>
-        </tfoot>
+      </table>
+    </div>
+
+    <h3>Bootstrap Node SG (temporary, ~45 min per session)</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Port</th><th>Protocol</th><th>Source</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>6443</td><td>TCP</td><td>0.0.0.0/0</td><td>Bootstrap API (via NLB + direct)</td></tr>
+          <tr><td>22623</td><td>TCP</td><td>VPC CIDR</td><td>Machine Config Server</td></tr>
+          <tr><td>19531</td><td>TCP</td><td><code>installer_allowed_cidr</code></td><td>Bootstrap journal log streaming</td></tr>
+          <tr><td>22</td><td>TCP</td><td><code>installer_allowed_cidr</code></td><td>SSH — Pi only (optional manual debug)</td></tr>
+        </tbody>
       </table>
     </div>
 
     <div class="callout tip">
       <span class="icon">💡</span>
-      <div><strong>Cost optimization:</strong> Purchase 1-year Reserved Instances for the 3 master nodes to cut EC2 costs by ~40%. Alternatively, use <code>m5.xlarge</code> (minimum spec) for dev/lab use only.</div>
+      <div>Set <code>installer_allowed_cidr = "154.47.25.17/32"</code> in <code>terraform.tfvars</code>
+      to restrict bootstrap access to only the Pi. Verify the IP with <code>curl ifconfig.me</code>
+      before each session if your home IP is dynamic.</div>
     </div>
   </section>
 
-  <!-- 10. Install Flow -->
+  <!-- 10. IAM -->
+  <section id="iam">
+    <h2>10. IAM Roles &amp; Policies</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Role</th><th>Attached To</th><th>Key Permissions</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>okd-lab-master-role</code></td>
+            <td>Master node instance profile</td>
+            <td>ec2:*, elasticloadbalancing:*, iam:PassRole, route53:*, s3:Get/Put/Delete,
+            sts:AssumeRole, <strong>AmazonSSMManagedInstanceCore</strong></td>
+          </tr>
+          <tr>
+            <td><code>okd-lab-worker-role</code></td>
+            <td>Worker instance profile (unused in compact, reserved for future)</td>
+            <td>ec2:Describe*, s3:GetObject, <strong>AmazonSSMManagedInstanceCore</strong></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout info">
+      <span class="icon">ℹ️</span>
+      <div>The <strong>AmazonSSMManagedInstanceCore</strong> managed policy enables
+      <code>aws ssm start-session</code> as a backup access method without requiring SSH or
+      a jump host. <code>oc debug node</code> remains the primary access method.</div>
+    </div>
+  </section>
+
+  <!-- 11. S3 -->
+  <section id="s3">
+    <h2>11. S3 Buckets</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Bucket</th><th>Purpose</th><th>Access</th><th>Versioning</th><th>Lifecycle</th></tr></thead>
+        <tbody>
+          <tr>
+            <td><code>okd-bootstrap-&lt;id&gt;</code></td>
+            <td>bootstrap.ign, master.ign, worker.ign</td>
+            <td>Public read (nodes fetch on first boot)</td>
+            <td>None</td>
+            <td class="warn">Destroyed by lab-down.sh</td>
+          </tr>
+          <tr>
+            <td><code>okd-registry-&lt;id&gt;</code></td>
+            <td>OKD internal image registry backend</td>
+            <td>Master IAM role only</td>
+            <td>None (ephemeral)</td>
+            <td class="warn">Destroyed by lab-down.sh</td>
+          </tr>
+          <tr>
+            <td><code>okd-lab-tfstate</code></td>
+            <td>Terraform remote state</td>
+            <td>Installer IAM only</td>
+            <td>Enabled</td>
+            <td class="yes">Permanent — created once manually, ~$2/mo</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="callout tip">
+      <span class="icon">💡</span>
+      <div>Both ephemeral buckets have <code>force_destroy = true</code> so
+      <code>terraform destroy</code> can empty and delete them in one step —
+      no manual cleanup needed.</div>
+    </div>
+  </section>
+
+  <!-- 12. Install Flow -->
   <section id="install">
-    <h2>10. Install Flow</h2>
-
+    <h2>12. Install Flow</h2>
     <ul class="steps">
-      <li>
-        <div class="step-num">1</div>
-        <div><strong>Terraform — Core Infrastructure</strong><br>
-        Provision VPC, subnets, IGW, NAT GWs, route tables, security groups, IAM roles, NLBs, Route53 zones + records, S3 buckets.</div>
-      </li>
-      <li>
-        <div class="step-num">2</div>
-        <div><strong>Generate Ignition Configs</strong><br>
-        Run <code>openshift-install create install-config</code>, customize <code>install-config.yaml</code> for compact topology (3 replicas, 0 workers), then run <code>openshift-install create ignition-configs</code>.</div>
-      </li>
-      <li>
-        <div class="step-num">3</div>
-        <div><strong>Upload Bootstrap Ignition</strong><br>
-        Upload <code>bootstrap.ign</code> to the S3 bootstrap bucket. Master ignition files reference the MCS for their own configs.</div>
-      </li>
-      <li>
-        <div class="step-num">4</div>
-        <div><strong>Terraform — Bootstrap + Master EC2</strong><br>
-        Launch the temporary bootstrap node and all 3 master nodes using the ignition configs as EC2 user-data.</div>
-      </li>
-      <li>
-        <div class="step-num">5</div>
-        <div><strong>Bootstrap Process (~30–45 min)</strong><br>
-        Bootstrap node starts a temporary control plane. Master nodes boot, pull their ignition configs from MCS, join etcd quorum, and take over as permanent control plane. Bootstrap node is then terminated.</div>
-      </li>
-      <li>
-        <div class="step-num">6</div>
-        <div><strong>Cluster Operators Stabilize</strong><br>
-        Run <code>openshift-install wait-for install-complete</code>. All cluster operators (console, image-registry, ingress, etc.) become available.</div>
-      </li>
-      <li>
-        <div class="step-num">7</div>
-        <div><strong>Post-Install: ArgoCD + GitOps</strong><br>
-        Install the OpenShift GitOps Operator via OperatorHub. Connect your GitHub repo. Deploy the app-of-apps ArgoCD Application.</div>
-      </li>
+      <li><div class="step-num">1</div><div><strong>Terraform — Core Infrastructure</strong><br>
+        Provisions VPC, subnets, IGW, NAT GW, SGs, IAM roles, NLBs, Route53 zones + records,
+        S3 buckets. Excludes EC2 nodes (applied separately after ignition is ready).</div></li>
+      <li><div class="step-num">2</div><div><strong>Render install-config.yaml</strong><br>
+        <code>lab-up.sh</code> pulls subnet IDs from Terraform outputs, injects them into
+        <code>install-config-template.yaml</code> via <code>envsubst</code>, writes
+        <code>cluster-config/install-config.yaml</code>.</div></li>
+      <li><div class="step-num">3</div><div><strong>Generate Ignition Configs</strong><br>
+        <code>openshift-install create ignition-configs</code> consumes install-config.yaml and
+        produces <code>bootstrap.ign</code>, <code>master.ign</code>, <code>worker.ign</code>.
+        install-config.yaml is deleted by the installer.</div></li>
+      <li><div class="step-num">4</div><div><strong>Upload to S3</strong><br>
+        Ignition files are uploaded to the bootstrap S3 bucket. EC2 nodes fetch them on
+        first boot via their user-data ignition pointer.</div></li>
+      <li><div class="step-num">5</div><div><strong>Launch Bootstrap + Masters</strong><br>
+        Terraform applies the EC2 module. Bootstrap node (public subnet) and 3 master nodes
+        (private subnets) start. All boot into Fedora CoreOS and fetch their ignition configs.</div></li>
+      <li><div class="step-num">6</div><div><strong>Bootstrap Process (~35 min)</strong><br>
+        Bootstrap node brings up a temporary control plane. Masters join, form etcd quorum,
+        and take over as the permanent control plane. <code>lab-up.sh</code> detects completion
+        and immediately destroys the bootstrap node.</div></li>
+      <li><div class="step-num">7</div><div><strong>Cluster Operators Stabilise (~10 min)</strong><br>
+        All cluster operators (console, ingress, image-registry, monitoring, etc.) come online.
+        <code>openshift-install wait-for install-complete</code> confirms readiness.</div></li>
+      <li><div class="step-num">8</div><div><strong>Post-Install: GitOps Setup</strong><br>
+        Install the OpenShift GitOps Operator, connect the GitHub repo, apply the app-of-apps
+        ArgoCD Application. All future changes go through Git.</div></li>
     </ul>
-
-    <h3>Key CLI Commands</h3>
-    <pre>
-# Download OKD installer
-wget https://github.com/okd-project/okd/releases/download/&lt;version&gt;/openshift-install-linux.tar.gz
-tar -xzf openshift-install-linux.tar.gz
-
-# Create install config
-./openshift-install create install-config --dir=./cluster-config
-
-# Generate ignition configs
-./openshift-install create ignition-configs --dir=./cluster-config
-
-# Monitor bootstrap
-./openshift-install wait-for bootstrap-complete --dir=./cluster-config --log-level=info
-
-# Monitor install completion
-./openshift-install wait-for install-complete --dir=./cluster-config --log-level=info
-
-# Access cluster
-export KUBECONFIG=./cluster-config/auth/kubeconfig
-oc get nodes
-oc get clusteroperators
-    </pre>
 
     <h3>install-config.yaml (compact topology)</h3>
     <pre>
 apiVersion: v1
 baseDomain: example.com
 metadata:
-  name: okd-prod
-compute:
-  - name: worker
-    replicas: 0            # Compact: no dedicated workers
+  name: okd-lab
 controlPlane:
   name: master
   replicas: 3
   platform:
     aws:
-      type: m5.2xlarge
-      zones:
-        - us-east-1a
-        - us-east-1b
-        - us-east-1c
+      type: m6a.xlarge
+      rootVolume: { iops: 3000, size: 100, type: gp3 }
+      zones: [us-east-1a, us-east-1b, us-east-1c]
+compute:
+  - name: worker
+    replicas: 0        # Compact — no dedicated workers
 platform:
   aws:
     region: us-east-1
-pullSecret: '{"auths": ...}'   # Use fake pull secret for OKD
+    subnets:           # Private subnet IDs from Terraform outputs
+      - subnet-aaa
+      - subnet-bbb
+      - subnet-ccc
+    lbType: NLB
+pullSecret: '{"auths":{"fake":{"auth":"aWQ6cGFzcwo="}}}'
 sshKey: |
-  ssh-rsa AAAA...              # Your public SSH key
-    </pre>
+  ssh-rsa AAAA...    # Embedded by lab-up.sh from terraform.tfvars</pre>
+  </section>
 
-    <div class="callout info">
-      <span class="icon">ℹ️</span>
-      <div>OKD does not require a Red Hat pull secret. Use the fake pull secret from the <a href="https://okd.io" target="_blank">OKD documentation</a> or leave it as <code>{"auths":{"fake":{"auth":"aWQ6cGFzcwo="}}}</code>.</div>
+  <!-- 13. Cost -->
+  <section id="cost">
+    <h2>13. Cost Model</h2>
+
+    <div class="cost-grid">
+      <div class="cost-card rest">
+        <h4>At Rest (lab destroyed)</h4>
+        <div class="amount">~$2</div>
+        <div class="unit">per month</div>
+        <div class="note">S3 tfstate bucket only. All EC2, NLBs, NAT GW, EBS destroyed.</div>
+      </div>
+      <div class="cost-card running">
+        <h4>While Running</h4>
+        <div class="amount">~$0.62</div>
+        <div class="unit">per hour</div>
+        <div class="note">3× m6a.xlarge + NLBs + NAT GW + EBS. On-demand — no commitment.</div>
+      </div>
+    </div>
+
+    <h3>Hourly Running Cost Breakdown</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Resource</th><th>Per Hour</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>3× m6a.xlarge</td><td>$0.518</td><td>3 × $0.1728 — only while running</td></tr>
+          <tr><td>3× NLB</td><td>$0.024</td><td>3 × $0.008 — created/destroyed each session</td></tr>
+          <tr><td>1× NAT Gateway</td><td>$0.045</td><td>Single AZ — created/destroyed each session</td></tr>
+          <tr><td>EBS (300 GB gp3)</td><td>~$0.033</td><td>3 × 100 GB — deleted on termination</td></tr>
+          <tr><td>Bootstrap node</td><td>$0.058</td><td>m6a.large × ~45 min then destroyed</td></tr>
+          <tr><td><strong>Total (steady state)</strong></td><td><strong>~$0.62/hr</strong></td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Estimated Monthly Cost by Usage</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Usage Pattern</th><th>Running Hours/mo</th><th>Running Cost</th><th>Idle Cost</th><th>Total</th></tr></thead>
+        <tbody>
+          <tr><td>Light (2–3 sessions/wk)</td><td>~20 hrs</td><td>~$12</td><td>~$2</td><td class="yes">~$14/mo</td></tr>
+          <tr><td>Moderate (daily, 2 hrs)</td><td>~60 hrs</td><td>~$37</td><td>~$2</td><td class="yes">~$39/mo</td></tr>
+          <tr><td>Heavy (all day weekdays)</td><td>~160 hrs</td><td>~$99</td><td>~$2</td><td class="yes">~$101/mo</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="callout tip">
+      <span class="icon">💡</span>
+      <div><strong>The key saving:</strong> By destroying all resources at rest (not just stopping EC2),
+      you avoid the $50+/mo in NLB + NAT Gateway idle charges that would apply if you only
+      stopped the instances.</div>
+    </div>
+
+    <h3>Design Decisions That Minimise Cost</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Decision</th><th>Saving</th><th>Trade-off</th></tr></thead>
+        <tbody>
+          <tr><td>Full destroy at rest (not stop/start)</td><td>~$50/mo</td><td>~50 min rebuild time each session</td></tr>
+          <tr><td><code>m6a.xlarge</code> not <code>m6a.2xlarge</code></td><td>~$0.35/hr</td><td>16 GB RAM — tight for heavy workloads</td></tr>
+          <tr><td>Single root volume, no dedicated etcd EBS</td><td>~$8/mo running</td><td>Slightly lower etcd I/O isolation</td></tr>
+          <tr><td>Single NAT Gateway (not 3×)</td><td>~$65/mo running</td><td>Single AZ for outbound — fine for lab</td></tr>
+          <tr><td>No bastion host (Raspberry Pi instead)</td><td>~$17/mo</td><td>Must install tools on Pi</td></tr>
+          <tr><td>On-Demand pricing (not Reserved)</td><td>Flexible</td><td>Higher per-hour rate vs 1yr RI</td></tr>
+        </tbody>
+      </table>
     </div>
   </section>
 
-  <!-- 11. GitOps -->
+  <!-- 14. GitOps -->
   <section id="gitops">
-    <h2>11. GitOps &amp; ArgoCD</h2>
+    <h2>14. GitOps &amp; ArgoCD</h2>
 
-    <h3>Install OpenShift GitOps Operator</h3>
+    <h3>Install OpenShift GitOps Operator (once per session)</h3>
     <pre>
-# Via CLI (or use OperatorHub web console)
 oc apply -f - &lt;&lt;EOF
 apiVersion: operators.coreos.com/v1alpha1
 kind: Subscription
@@ -720,30 +887,23 @@ spec:
   sourceNamespace: openshift-marketplace
 EOF
 
-# Get ArgoCD admin password
-oc extract secret/openshift-gitops-cluster \
-  -n openshift-gitops --to=-
-    </pre>
+# Wait for ArgoCD to be ready
+oc wait --for=condition=Available deployment/openshift-gitops-server \
+  -n openshift-gitops --timeout=5m
 
-    <h3>GitOps Repository Structure</h3>
+# Get admin password
+oc extract secret/openshift-gitops-cluster -n openshift-gitops --to=-</pre>
+
+    <h3>Repository Structure</h3>
     <pre>
 OKD-lab/
 ├── gitops/
 │   ├── apps/
-│   │   ├── app-of-apps.yaml       # Root ArgoCD Application
-│   │   └── my-app.yaml            # Child Application per service
-│   ├── infrastructure/
-│   │   ├── cert-manager/
-│   │   ├── ingress/
-│   │   └── monitoring/
-│   └── services/
-│       └── my-app/
-│           ├── deployment.yaml
-│           ├── service.yaml
-│           └── route.yaml
-└── terraform/
-    └── ...
-    </pre>
+│   │   ├── app-of-apps.yaml         # Root ArgoCD Application (manages all others)
+│   │   └── my-app.yaml              # Per-service ArgoCD Application
+│   ├── infrastructure/              # Cluster-level: cert-manager, monitoring, etc.
+│   └── services/                    # Application manifests / Helm charts
+└── terraform/ scripts/ docs/  ...</pre>
 
     <h3>App-of-Apps Pattern</h3>
     <pre>
@@ -765,43 +925,56 @@ spec:
   syncPolicy:
     automated:
       prune: true
-      selfHeal: true
-    </pre>
+      selfHeal: true</pre>
   </section>
 
-  <!-- 12. Terraform -->
+  <!-- 15. Terraform -->
   <section id="terraform">
-    <h2>12. Terraform Structure</h2>
+    <h2>15. Terraform Structure</h2>
     <pre>
 terraform/
-├── main.tf                          # Root module — calls all child modules
+├── main.tf                          # Root module — wires all child modules
 ├── variables.tf                     # Input variables
-├── outputs.tf                       # Output values
-├── versions.tf                      # Required providers + versions
+├── outputs.tf                       # Outputs (URLs, subnet IDs, bucket names)
+├── versions.tf                      # Provider versions
 ├── modules/
-│   ├── vpc/                         # VPC, subnets, IGW, NAT GWs, route tables
-│   ├── security-groups/             # All security group definitions
-│   ├── iam/                         # IAM roles, policies, instance profiles
-│   ├── load-balancers/              # NLBs + target groups + listeners
+│   ├── vpc/                         # VPC, subnets, IGW, 1× NAT GW, route tables
+│   ├── security-groups/             # Master SG + Bootstrap SG (no bastion SG)
+│   ├── iam/                         # Master + worker roles, SSM policy attachment
+│   ├── load-balancers/              # 3× NLBs + target groups + listeners
 │   ├── dns/                         # Route53 public + private zones + records
-│   ├── s3/                          # Bootstrap + image registry buckets
-│   └── ec2/                         # Bootstrap node + master nodes
+│   ├── s3/                          # Bootstrap + image registry buckets (ephemeral)
+│   └── ec2/                         # Bootstrap + 3× master nodes, NLB attachments
 └── environments/
     └── okd-prod/
-        ├── main.tf                  # Environment-specific root
-        ├── terraform.tfvars         # Env variable values
-        └── backend.tf               # S3 remote state config
-    </pre>
+        ├── terraform.tfvars         # ← Edit this: domain, SSH key, instance types
+        └── backend.tf               # S3 remote state (one-time manual setup)</pre>
+
+    <h3>Key Variable Defaults</h3>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Variable</th><th>Default</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td><code>master_instance_type</code></td><td>m6a.xlarge</td><td>Cheapest viable x86_64 — upgrade to 2xlarge if needed</td></tr>
+          <tr><td><code>bootstrap_instance_type</code></td><td>m6a.large</td><td>Temporary only</td></tr>
+          <tr><td><code>master_root_volume_size</code></td><td>100 GB</td><td>Single volume — OS + etcd</td></tr>
+          <tr><td><code>single_nat_gateway</code></td><td>true</td><td>Lab cost saving — set false for HA</td></tr>
+          <tr><td><code>installer_allowed_cidr</code></td><td>0.0.0.0/0</td><td>Set to Pi IP: "154.47.25.17/32"</td></tr>
+        </tbody>
+      </table>
+    </div>
   </section>
 
 </div>
 
 <footer>
   <p>
-    OKD-lab &nbsp;·&nbsp; <a href="https://github.com/4mcqueens/OKD-lab" target="_blank">github.com/4mcqueens/OKD-lab</a>
+    OKD-lab &nbsp;·&nbsp;
+    <a href="https://github.com/4mcqueens/OKD-lab" target="_blank">github.com/4mcqueens/OKD-lab</a>
     &nbsp;·&nbsp; <a href="https://okd.io" target="_blank">okd.io</a>
     &nbsp;·&nbsp; <a href="https://argo-cd.readthedocs.io" target="_blank">ArgoCD Docs</a>
-    &nbsp;·&nbsp; Generated 2026-05-23
+    &nbsp;·&nbsp; <a href="https://aws.amazon.com/ec2/instance-types/m6a/" target="_blank">m6a Instances</a>
+    &nbsp;·&nbsp; Updated 2026-05-23
   </p>
 </footer>
 
