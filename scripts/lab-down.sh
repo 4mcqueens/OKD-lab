@@ -60,7 +60,6 @@ log "Running terraform destroy..."
 cd "$TF_DIR"
 
 terraform init -reconfigure \
-  -backend-config="environments/okd-prod/backend.tf" \
   -input=false 2>/dev/null || warn "terraform init failed — attempting destroy anyway"
 
 terraform destroy \

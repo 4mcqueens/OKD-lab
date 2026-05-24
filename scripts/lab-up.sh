@@ -101,7 +101,6 @@ apply_infra() {
   cd "$TF_DIR"
 
   terraform init -reconfigure \
-    -backend-config="environments/okd-prod/backend.tf" \
     -input=false
 
   terraform apply \

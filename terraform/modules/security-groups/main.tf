@@ -2,7 +2,7 @@
 # No SSH ingress — use `oc debug node/<name>` for shell access after cluster is up.
 resource "aws_security_group" "master" {
   name        = "${var.cluster_name}-master-sg"
-  description = "OKD compact master+worker nodes — no bastion, access via oc debug"
+  description = "OKD compact master+worker nodes - no bastion, access via oc debug"
   vpc_id      = var.vpc_id
   tags        = { Name = "${var.cluster_name}-master-sg" }
 
@@ -15,7 +15,7 @@ resource "aws_security_group" "master" {
   }
 
   ingress {
-    description = "Machine Config Server (MCS) — internal only"
+    description = "Machine Config Server (MCS) - internal only"
     from_port   = 22623
     to_port     = 22623
     protocol    = "tcp"
@@ -23,7 +23,7 @@ resource "aws_security_group" "master" {
   }
 
   ingress {
-    description = "etcd client + peer — control plane only"
+    description = "etcd client + peer - control plane only"
     from_port   = 2379
     to_port     = 2380
     protocol    = "tcp"
@@ -47,7 +47,7 @@ resource "aws_security_group" "master" {
   }
 
   ingress {
-    description = "VXLAN — OVN-Kubernetes"
+    description = "VXLAN - OVN-Kubernetes"
     from_port   = 4789
     to_port     = 4789
     protocol    = "udp"
@@ -55,7 +55,7 @@ resource "aws_security_group" "master" {
   }
 
   ingress {
-    description = "Geneve — OVN"
+    description = "Geneve - OVN"
     from_port   = 6081
     to_port     = 6081
     protocol    = "udp"
@@ -147,7 +147,7 @@ resource "aws_security_group" "bootstrap" {
   }
 
   ingress {
-    description = "SSH — installer machine only (optional, for manual log inspection)"
+    description = "SSH - installer machine only (optional, for manual log inspection)"
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
