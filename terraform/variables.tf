@@ -2,7 +2,7 @@
 variable "cluster_name" {
   description = "OKD cluster name (used in DNS and resource naming)"
   type        = string
-  default     = "okd-prod"
+  default     = "okd-lab"
 }
 
 variable "base_domain" {
@@ -11,7 +11,7 @@ variable "base_domain" {
 }
 
 variable "environment" {
-  description = "Environment label (e.g. lab, prod)"
+  description = "Environment label"
   type        = string
   default     = "lab"
 }
@@ -24,76 +24,60 @@ variable "aws_region" {
 }
 
 variable "availability_zones" {
-  description = "List of AZs to spread nodes across (must be 3)"
+  description = "List of 3 AZs to spread nodes across"
   type        = list(string)
   default     = ["us-east-1a", "us-east-1b", "us-east-1c"]
 }
 
 # ── VPC Networking ───────────────────────────────────────────────────────────
 variable "vpc_cidr" {
-  description = "CIDR block for the VPC"
-  type        = string
-  default     = "10.0.0.0/16"
+  type    = string
+  default = "10.0.0.0/16"
 }
 
 variable "public_subnet_cidrs" {
-  description = "CIDRs for public subnets (LBs, NAT GWs, bastion)"
-  type        = list(string)
-  default     = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  type    = list(string)
+  default = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
 }
 
 variable "private_subnet_cidrs" {
-  description = "CIDRs for private subnets (OKD nodes)"
-  type        = list(string)
-  default     = ["10.0.10.0/24", "10.0.20.0/24", "10.0.30.0/24"]
+  type    = list(string)
+  default = ["10.0.10.0/24", "10.0.20.0/24", "10.0.30.0/24"]
 }
 
 variable "single_nat_gateway" {
-  description = "Use a single NAT Gateway instead of one per AZ (reduces cost for lab use)"
+  description = "Use one NAT Gateway instead of one per AZ (lab cost saving)"
   type        = bool
   default     = true
 }
 
-# ── EC2 Instance Types ───────────────────────────────────────────────────────
+# ── EC2 ─────────────────────────────────────────────────────────────────────
 variable "master_instance_type" {
-  description = "EC2 instance type for master+worker nodes"
+  description = "EC2 instance type for master+worker nodes — m6a.xlarge is minimum viable for lab"
   type        = string
-  default     = "m5.2xlarge"
-}
-
-variable "bastion_instance_type" {
-  description = "EC2 instance type for the bastion host"
-  type        = string
-  default     = "t3.small"
+  default     = "m6a.xlarge"
 }
 
 variable "bootstrap_instance_type" {
-  description = "EC2 instance type for the bootstrap node (temporary)"
+  description = "EC2 instance type for the temporary bootstrap node"
   type        = string
-  default     = "m5.large"
+  default     = "m6a.large"
 }
 
-# ── Storage ──────────────────────────────────────────────────────────────────
 variable "master_root_volume_size" {
-  description = "Root EBS volume size (GB) for master nodes"
-  type        = number
-  default     = 120
-}
-
-variable "master_etcd_volume_size" {
-  description = "Dedicated etcd EBS volume size (GB) for master nodes"
+  description = "Root EBS volume size (GB) per master node — includes etcd for lab use"
   type        = number
   default     = 100
 }
 
-# ── SSH Access ───────────────────────────────────────────────────────────────
+# ── SSH / Access ─────────────────────────────────────────────────────────────
 variable "ssh_public_key" {
-  description = "SSH public key to install on the bastion host"
+  description = "SSH public key embedded in ignition config (for core user on FCOS nodes)"
   type        = string
 }
 
-variable "bastion_allowed_cidr" {
-  description = "CIDR block allowed to SSH to the bastion host"
+variable "installer_allowed_cidr" {
+  description = "CIDR of the machine running openshift-install (needs bootstrap API access)"
   type        = string
-  default     = "0.0.0.0/0" # Restrict this to your IP in production
+  default     = "0.0.0.0/0"
 }

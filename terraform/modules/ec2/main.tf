@@ -1,8 +1,4 @@
 # ── Data: Latest Fedora CoreOS AMI ───────────────────────────────────────────
-# Note: OKD nodes use FCOS. The AMI is region-specific.
-# Run: aws ec2 describe-images --owners 125523088429 \
-#   --filters "Name=name,Values=fedora-coreos-*" "Name=architecture,Values=x86_64" \
-#   --query 'sort_by(Images,&CreationDate)[-1].ImageId'
 data "aws_ami" "fcos" {
   most_recent = true
   owners      = ["125523088429"] # Fedora CoreOS AWS account
@@ -21,51 +17,17 @@ data "aws_ami" "fcos" {
   }
 }
 
-# ── Data: Amazon Linux 2 AMI (Bastion) ───────────────────────────────────────
-data "aws_ami" "amazon_linux_2" {
-  most_recent = true
-  owners      = ["amazon"]
-
-  filter {
-    name   = "name"
-    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
-  }
-}
-
 # ── SSH Key Pair ──────────────────────────────────────────────────────────────
-resource "aws_key_pair" "bastion" {
-  key_name   = "${var.cluster_name}-bastion-key"
+# Used by openshift-install to embed SSH access into ignition configs.
+# After cluster is up, use `oc debug node/<name>` instead of direct SSH.
+resource "aws_key_pair" "cluster" {
+  key_name   = "${var.cluster_name}-key"
   public_key = var.ssh_public_key
 }
 
-# ── Bastion Host ──────────────────────────────────────────────────────────────
-resource "aws_instance" "bastion" {
-  ami                         = data.aws_ami.amazon_linux_2.id
-  instance_type               = var.bastion_instance_type
-  subnet_id                   = var.public_subnet_ids[0]
-  vpc_security_group_ids      = [var.bastion_sg_id]
-  key_name                    = aws_key_pair.bastion.key_name
-  associate_public_ip_address = true
-
-  root_block_device {
-    volume_type = "gp3"
-    volume_size = 20
-    encrypted   = true
-  }
-
-  user_data = <<-EOF
-    #!/bin/bash
-    yum update -y
-    yum install -y git curl wget jq
-    # Install oc CLI
-    curl -sL https://mirror.openshift.com/pub/openshift-v4/clients/ocp/latest/openshift-client-linux.tar.gz \
-      | tar -xz -C /usr/local/bin oc kubectl
-  EOF
-
-  tags = { Name = "${var.cluster_name}-bastion" }
-}
-
-# ── Master Nodes (Compact: master + worker) ───────────────────────────────────
+# ── Master Nodes (Compact — master + worker) ──────────────────────────────────
+# Single root volume handles both OS and etcd for lab use.
+# No dedicated etcd volume — acceptable for non-production, ephemeral sessions.
 resource "aws_instance" "master" {
   count         = 3
   ami           = data.aws_ami.fcos.id
@@ -74,9 +36,9 @@ resource "aws_instance" "master" {
 
   vpc_security_group_ids = [var.master_sg_id]
   iam_instance_profile   = var.master_instance_profile
+  key_name               = aws_key_pair.cluster.key_name
 
-  # Ignition user-data: points to the bootstrap ignition URL in S3
-  # The actual ignition file is uploaded after running openshift-install
+  # Ignition user-data: fetches master.ign from S3 on first boot
   user_data = jsonencode({
     ignition = {
       version = "3.1.0"
@@ -89,44 +51,38 @@ resource "aws_instance" "master" {
   })
 
   root_block_device {
-    volume_type = "gp3"
-    volume_size = var.master_root_volume_size
-    encrypted   = true
+    volume_type           = "gp3"
+    volume_size           = var.master_root_volume_size
+    iops                  = 3000   # gp3 baseline — adequate for lab etcd
+    throughput            = 125
+    encrypted             = true
+    delete_on_termination = true   # ephemeral — no data to keep between sessions
   }
 
   tags = {
     Name                                              = "${var.cluster_name}-master-${count.index}"
     "kubernetes.io/cluster/${var.cluster_name}"       = "owned"
+    Role                                              = "master"
+  }
+
+  lifecycle {
+    ignore_changes = [ami] # Prevent replacement if FCOS AMI updates mid-session
   }
 }
 
-# ── Dedicated etcd EBS Volumes ────────────────────────────────────────────────
-resource "aws_ebs_volume" "etcd" {
-  count             = 3
-  availability_zone = var.availability_zones[count.index]
-  size              = var.master_etcd_volume_size
-  type              = "gp3"
-  iops              = 3000
-  throughput        = 125
-  encrypted         = true
-  tags              = { Name = "${var.cluster_name}-etcd-${count.index}" }
-}
-
-resource "aws_volume_attachment" "etcd" {
-  count       = 3
-  device_name = "/dev/xvdb"
-  volume_id   = aws_ebs_volume.etcd[count.index].id
-  instance_id = aws_instance.master[count.index].id
-}
-
 # ── Bootstrap Node (temporary) ────────────────────────────────────────────────
+# Exists only during the ~45-min install process.
+# Placed in a public subnet so openshift-install can reach the bootstrap API.
+# Destroyed by lab-up.sh immediately after bootstrap-complete.
 resource "aws_instance" "bootstrap" {
   ami           = data.aws_ami.fcos.id
   instance_type = var.bootstrap_instance_type
   subnet_id     = var.public_subnet_ids[0]
 
-  vpc_security_group_ids = [var.bootstrap_sg_id]
-  iam_instance_profile   = var.master_instance_profile
+  vpc_security_group_ids      = [var.bootstrap_sg_id]
+  iam_instance_profile        = var.master_instance_profile
+  key_name                    = aws_key_pair.cluster.key_name
+  associate_public_ip_address = true
 
   user_data = jsonencode({
     ignition = {
@@ -140,14 +96,15 @@ resource "aws_instance" "bootstrap" {
   })
 
   root_block_device {
-    volume_type = "gp3"
-    volume_size = 120
-    encrypted   = true
+    volume_type           = "gp3"
+    volume_size           = 100
+    encrypted             = true
+    delete_on_termination = true
   }
 
   tags = {
     Name = "${var.cluster_name}-bootstrap"
-    Note = "TEMPORARY — destroy after cluster install completes"
+    Note = "TEMPORARY — destroyed by lab-up.sh after bootstrap-complete"
   }
 }
 
@@ -188,6 +145,7 @@ resource "aws_lb_target_group_attachment" "apps_https" {
 }
 
 # ── NLB Target Group Attachments — Bootstrap ──────────────────────────────────
+# Bootstrap needs to serve the initial API and MCS until masters take over.
 resource "aws_lb_target_group_attachment" "bootstrap_api_ext" {
   target_group_arn = var.api_nlb_ext_target_arn
   target_id        = aws_instance.bootstrap.id

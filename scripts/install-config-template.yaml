@@ -1,0 +1,72 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# OKD install-config template
+#
+# This file is rendered by lab-up.sh using envsubst — do NOT put literal
+# values for the ${...} placeholders here; they are populated automatically
+# from Terraform outputs and terraform.tfvars at runtime.
+#
+# Fields you may want to customise manually:
+#   - fips (false = default, set true only if required)
+#   - networking.* (leave defaults unless you have CIDR conflicts)
+# ─────────────────────────────────────────────────────────────────────────────
+apiVersion: v1
+baseDomain: ${BASE_DOMAIN}
+
+metadata:
+  name: ${CLUSTER_NAME}
+
+# ── Compact topology: masters also run workloads, no dedicated workers ────────
+controlPlane:
+  architecture: amd64
+  hyperthreading: Enabled
+  name: master
+  replicas: 3
+  platform:
+    aws:
+      type: ${MASTER_INSTANCE_TYPE}
+      rootVolume:
+        iops: 3000
+        size: 100
+        type: gp3
+      zones:
+        - ${AZ_1}
+        - ${AZ_2}
+        - ${AZ_3}
+
+compute:
+  - architecture: amd64
+    hyperthreading: Enabled
+    name: worker
+    replicas: 0             # Zero workers — compact cluster
+    platform: {}
+
+# ── AWS platform ──────────────────────────────────────────────────────────────
+platform:
+  aws:
+    region: ${AWS_REGION}
+    # Use pre-existing subnets created by Terraform (UPI-style VPC integration)
+    subnets:
+      - ${PRIVATE_SUBNET_1}
+      - ${PRIVATE_SUBNET_2}
+      - ${PRIVATE_SUBNET_3}
+    lbType: NLB
+
+# ── Networking ────────────────────────────────────────────────────────────────
+networking:
+  clusterNetwork:
+    - cidr: 10.128.0.0/14
+      hostPrefix: 23
+  machineNetwork:
+    - cidr: 10.0.0.0/16
+  networkType: OVNKubernetes
+  serviceNetwork:
+    - 172.30.0.0/16
+
+# ── OKD does not require a Red Hat pull secret ────────────────────────────────
+pullSecret: '{"auths":{"fake":{"auth":"aWQ6cGFzcwo="}}}'
+
+# ── SSH key is embedded in ignition; used by `oc debug node` and emergency SSH
+sshKey: |
+  ${SSH_PUBLIC_KEY}
+
+fips: false

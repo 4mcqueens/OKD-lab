@@ -1,14 +1,13 @@
 # ── Bootstrap Ignition Bucket ─────────────────────────────────────────────────
+# Ephemeral — created each session, destroyed with `lab-down.sh`.
 resource "aws_s3_bucket" "bootstrap" {
   bucket        = "okd-bootstrap-${var.cluster_id}"
-  force_destroy = true   # Allows destroy even if bucket has objects
-  tags          = { Name = "okd-bootstrap-${var.cluster_id}", Purpose = "bootstrap" }
+  force_destroy = true
+  tags          = { Name = "okd-bootstrap-${var.cluster_id}", Purpose = "bootstrap", Lifecycle = "ephemeral" }
 }
 
 resource "aws_s3_bucket_public_access_block" "bootstrap" {
-  bucket = aws_s3_bucket.bootstrap.id
-
-  # Bootstrap node fetches bootstrap.ign — must be publicly readable
+  bucket                  = aws_s3_bucket.bootstrap.id
   block_public_acls       = false
   block_public_policy     = false
   ignore_public_acls      = false
@@ -16,33 +15,27 @@ resource "aws_s3_bucket_public_access_block" "bootstrap" {
 }
 
 resource "aws_s3_bucket_policy" "bootstrap" {
-  bucket = aws_s3_bucket.bootstrap.id
+  bucket     = aws_s3_bucket.bootstrap.id
   depends_on = [aws_s3_bucket_public_access_block.bootstrap]
 
   policy = jsonencode({
     Version = "2012-10-17"
-    Statement = [
-      {
-        Sid       = "PublicReadBootstrapIgnition"
-        Effect    = "Allow"
-        Principal = "*"
-        Action    = "s3:GetObject"
-        Resource  = "${aws_s3_bucket.bootstrap.arn}/bootstrap.ign"
-      }
-    ]
+    Statement = [{
+      Sid       = "PublicReadIgnitionFiles"
+      Effect    = "Allow"
+      Principal = "*"
+      Action    = "s3:GetObject"
+      Resource  = "${aws_s3_bucket.bootstrap.arn}/*"
+    }]
   })
 }
 
 # ── Image Registry Bucket ─────────────────────────────────────────────────────
+# Ephemeral — no versioning, no persistence needed between sessions.
 resource "aws_s3_bucket" "image_registry" {
   bucket        = "okd-registry-${var.cluster_id}"
-  force_destroy = false
-  tags          = { Name = "okd-registry-${var.cluster_id}", Purpose = "image-registry" }
-}
-
-resource "aws_s3_bucket_versioning" "image_registry" {
-  bucket = aws_s3_bucket.image_registry.id
-  versioning_configuration { status = "Enabled" }
+  force_destroy = true
+  tags          = { Name = "okd-registry-${var.cluster_id}", Purpose = "image-registry", Lifecycle = "ephemeral" }
 }
 
 resource "aws_s3_bucket_public_access_block" "image_registry" {
