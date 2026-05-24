@@ -22,5 +22,10 @@ bootstrap_instance_type = "m6a.large"   # Temporary only (~45 min per session)
 master_root_volume_size = 100           # Single volume — OS + etcd, ephemeral
 
 # ── Access ────────────────────────────────────────────────────────────────────
-ssh_public_key         = "ssh-rsa AAAA..."  # ← Replace with your public key
-installer_allowed_cidr = "0.0.0.0/0"       # ← Restrict to your IP: "x.x.x.x/32"
+ssh_public_key = "ssh-rsa AAAA..."   # ← Replace with your public key
+
+# installer_allowed_cidr controls which IP can reach the bootstrap node (ports 22, 19531).
+# lab-up.sh auto-detects the Pi's current public IP at runtime and passes it as a
+# -var override, so this fallback value is only used if auto-detection fails.
+# Cloudflare DDNS keeps the Pi reachable by hostname; the script resolves it to an IP.
+installer_allowed_cidr = "0.0.0.0/0"  # fallback — overridden automatically by lab-up.sh

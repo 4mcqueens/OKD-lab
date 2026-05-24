@@ -33,6 +33,25 @@ for arg in "$@"; do
   esac
 done
 
+# ── Auto-detect public IP ─────────────────────────────────────────────────────
+# Resolves the Pi's current public IP so installer_allowed_cidr is always
+# correct — no manual tfvars edits needed when Cloudflare DDNS updates.
+detect_public_ip() {
+  local ip
+  # Try multiple sources in case one is down
+  ip=$(curl -sf --max-time 5 https://ifconfig.me 2>/dev/null) \
+    || ip=$(curl -sf --max-time 5 https://api.ipify.org 2>/dev/null) \
+    || ip=$(curl -sf --max-time 5 https://checkip.amazonaws.com 2>/dev/null) \
+    || { warn "Could not determine public IP — bootstrap SG will use 0.0.0.0/0"; echo "0.0.0.0/0"; return; }
+  echo "${ip}/32"
+}
+
+PUBLIC_IP_CIDR=$(detect_public_ip)
+
+# Passed as a -var override to every terraform apply call, taking precedence
+# over installer_allowed_cidr in terraform.tfvars without modifying the file.
+TF_IP_VAR="-var=installer_allowed_cidr=${PUBLIC_IP_CIDR}"
+
 # ── Colours ──────────────────────────────────────────────────────────────────
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; CYAN='\033[0;36m'; NC='\033[0m'
 log()  { echo -e "${GREEN}[lab-up]${NC} $*"; }
@@ -78,6 +97,7 @@ apply_infra() {
   fi
 
   log "Phase 1: Applying core infrastructure..."
+  info "Installer allowed CIDR: ${PUBLIC_IP_CIDR}  (bootstrap SG locked to this Pi)"
   cd "$TF_DIR"
 
   terraform init -reconfigure \
@@ -86,6 +106,7 @@ apply_infra() {
 
   terraform apply \
     -var-file="$TF_VARS" \
+    $TF_IP_VAR \
     -target=module.vpc \
     -target=module.security_groups \
     -target=module.iam \
@@ -161,6 +182,7 @@ launch_nodes() {
 
   terraform apply \
     -var-file="$TF_VARS" \
+    $TF_IP_VAR \
     -target=module.ec2 \
     -auto-approve \
     -input=false
@@ -185,6 +207,7 @@ wait_bootstrap() {
   # Remove bootstrap from NLB target groups first, then terminate the instance
   terraform destroy \
     -var-file="$TF_VARS" \
+    $TF_IP_VAR \
     -target=module.ec2.aws_lb_target_group_attachment.bootstrap_api_ext \
     -target=module.ec2.aws_lb_target_group_attachment.bootstrap_api_int \
     -target=module.ec2.aws_lb_target_group_attachment.bootstrap_mcs_int \
